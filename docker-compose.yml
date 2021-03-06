@@ -2,7 +2,7 @@ version: "3"
 
 services:
   fw-config-web:
-    image: andrestefanov/oat-fw-config
+    image: fw-config
     restart: unless-stopped
     ports:
       - 3000
