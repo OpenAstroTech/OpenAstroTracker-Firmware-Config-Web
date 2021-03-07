@@ -133,6 +133,19 @@ const WizardStep = (props) => {
             },
         },
         {
+            title: 'RA Cog Teeth',
+            label: 'How many teeth does your RA cog have?',
+            variable: 'racog',
+            define: 'RA_PULLEY_TEETH',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: '1', value: '16 tooth purchased gear', image: '/images/cog16t.png', defineValue: '16' },
+                    { key: '2', value: '20 tooth printed gear', image: '/images/cog20t.png', defineValue: '20' },
+                ]
+            },
+        },
+        {
             title: 'RA Driver',
             label: 'Which driver board are you using to drive the RA stepper motor:',
             variable: 'radrv',
@@ -158,6 +171,19 @@ const WizardStep = (props) => {
                     { key: 'B', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48' },
                     { key: 'N', value: 'NEMA 17', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
                     { key: 'N', value: 'NEMA 14', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_NEMA17' },
+                ]
+            },
+        },
+        {
+            title: 'DEC Cog Teeth',
+            label: 'How many teeth does your DEC cog have?',
+            variable: 'deccog',
+            define: 'DEC_PULLEY_TEETH',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: '1', value: '16 tooth purchased gear', image: '/images/cog16t.png', defineValue: '16' },
+                    { key: '2', value: '20 tooth printed gear', image: '/images/cog20t.png', defineValue: '20' },
                 ]
             },
         },
