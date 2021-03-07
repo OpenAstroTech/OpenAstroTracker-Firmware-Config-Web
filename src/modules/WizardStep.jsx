@@ -170,7 +170,7 @@ const WizardStep = (props) => {
                 choices: [
                     { key: 'B', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48' },
                     { key: 'N', value: 'NEMA 17', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
-                    { key: 'N', value: 'NEMA 14', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_NEMA17' },
+                    { key: '4', value: 'NEMA 14', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_NEMA17' },
                 ]
             },
         },
