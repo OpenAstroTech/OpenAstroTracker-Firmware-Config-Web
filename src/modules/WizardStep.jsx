@@ -128,7 +128,21 @@ const WizardStep = (props) => {
                 type: 'radioimg',
                 choices: [
                     { key: 'B', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48' },
-                    { key: 'N', value: 'NEMA 17', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
+                    { key: 'N', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
+                    { key: 'P', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define RA_STEPPER_SPR 200']   },
+                ]
+            },
+        },
+        {
+            title: 'RA Pulley Teeth',
+            label: 'How many teeth does your RA gear have?',
+            variable: 'racog',
+            define: 'RA_PULLEY_TEETH',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: '1', value: '16 tooth purchased gear', image: '/images/cog16t.png', defineValue: '16' },
+                    { key: '2', value: '20 tooth printed gear', image: '/images/cog20t.png', defineValue: '20' },
                 ]
             },
         },
@@ -156,8 +170,23 @@ const WizardStep = (props) => {
                 type: 'radioimg',
                 choices: [
                     { key: 'B', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48' },
-                    { key: 'N', value: 'NEMA 17', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
-                    { key: 'N', value: 'NEMA 14', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_NEMA17' },
+                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
+                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define DEC_STEPPER_SPR 200'] },
+                    { key: 'P9', value: 'NEMA 14, 0.9°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_NEMA17' },
+                    { key: 'P8', value: 'NEMA 14, 1.8°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define DEC_STEPPER_SPR 200']  },
+                ]
+            },
+        },
+        {
+            title: 'DEC Pulley Teeth',
+            label: 'How many teeth does your DEC gear have?',
+            variable: 'deccog',
+            define: 'DEC_PULLEY_TEETH',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: '1', value: '16 tooth purchased gear', image: '/images/cog16t.png', defineValue: '16' },
+                    { key: '2', value: '20 tooth printed gear', image: '/images/cog20t.png', defineValue: '20' },
                 ]
             },
         },
@@ -341,6 +370,9 @@ const WizardStep = (props) => {
             else {
                 let propertyValue = property.control.choices.find(choice => choice.key === config.value);
                 defines = [...defines, '#define ' + property.define + ' ' + propertyValue.defineValue];
+                if (propertyValue.additionalLines){
+                    defines = [...defines, ...propertyValue.additionalLines];
+                }
             }
         });
         // console.log(defines);
