@@ -134,8 +134,8 @@ const WizardStep = (props) => {
             },
         },
         {
-            title: 'RA Cog Teeth',
-            label: 'How many teeth does your RA cog have?',
+            title: 'RA Pulley Teeth',
+            label: 'How many teeth does your RA gear have?',
             variable: 'racog',
             define: 'RA_PULLEY_TEETH',
             control: {
@@ -178,8 +178,8 @@ const WizardStep = (props) => {
             },
         },
         {
-            title: 'DEC Cog Teeth',
-            label: 'How many teeth does your DEC cog have?',
+            title: 'DEC Pulley Teeth',
+            label: 'How many teeth does your DEC gear have?',
             variable: 'deccog',
             define: 'DEC_PULLEY_TEETH',
             control: {
