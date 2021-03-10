@@ -269,7 +269,7 @@ const WizardStep = (props) => {
         {
             title: 'WiFi Infrastructure Setup',
             label: 'Enter the WiFi parameters for Infrastructure mode:',
-            variable: 'wifiparams',
+            variable: 'wifiparamsi',
             conditions: [
                 { variable: 'wifi', neededKey: 'Y' },
                 { variable: 'wifimode', neededKey: 'I' },
@@ -288,7 +288,7 @@ const WizardStep = (props) => {
         {
             title: 'WiFi Access Point Setup',
             label: 'Enter the WiFi parameters for Access Point mode:',
-            variable: 'wifiparams',
+            variable: 'wifiparamsa',
             conditions: [
                 { variable: 'wifi', neededKey: 'Y' },
                 { variable: 'wifimode', neededKey: 'A' },
@@ -306,7 +306,7 @@ const WizardStep = (props) => {
         {
             title: 'WiFi Failover Setup',
             label: 'Enter the WiFi parameters for Failover mode:',
-            variable: 'wifiparams',
+            variable: 'wifiparamsf',
             conditions: [
                 { variable: 'wifi', neededKey: 'Y' },
                 { variable: 'wifimode', neededKey: 'F' },
@@ -347,7 +347,8 @@ const WizardStep = (props) => {
                 type: 'radioimg',
                 choices: [
                     { key: 'N', value: 'No Digital Level', image: '/images/none.png', defineValue: '0' },
-                    { key: 'Y', value: 'MPU-6050 Gyroscope', image: '/images/levelmpu6050.png', defineValue: '1' },
+                    { key: 'Y', value: 'MPU-6050 Gyroscope', image: '/images/levelmpu6050.png', defineValue: '1', additionalLines: ['#define GYRO_AXIS_SWAP 0'] },
+                    { key: 'Y2', value: 'MPU-6050 Gyroscope with axes swapped', image: '/images/levelmpu6050.png', defineValue: '1', additionalLines: ['#define GYRO_AXIS_SWAP 1'] },
                 ]
             },
         },
