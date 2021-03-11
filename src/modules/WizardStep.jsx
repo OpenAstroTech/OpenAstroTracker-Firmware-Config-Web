@@ -1,5 +1,5 @@
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     Button,
     Image,
@@ -18,6 +18,7 @@ const WizardStep = (props) => {
     const [showResult, setShowResult] = useState(false);
     const [configuration, setConfiguration] = useState([]);
     const [advanceStep, setAdvanceStep] = useState(false);
+    const downloadParentRef = useRef(null);
 
     const onRestart = () => {
         setConfiguration([]);
@@ -34,11 +35,11 @@ const WizardStep = (props) => {
             skip = false;
             let nextStep = stepProps[nextStepIndex];
             if (nextStep.conditions) {
-                // console.log("Next step has conditions:", nextStep.conditions)
                 let result = true;
                 nextStep.conditions.forEach(cond => {
+                    const neededKeys = cond.neededKeys.split(',');
                     const conf = configuration.find(config => config.variable === cond.variable);
-                    if (!conf || (conf.value !== cond.neededKey)) {
+                    if (!conf || (neededKeys.indexOf(conf.value) === -1)) {
                         result = false;
                     }
                 });
@@ -63,18 +64,30 @@ const WizardStep = (props) => {
         }
     }, [advanceStep]);
 
+    const downloadTxtFile = (lines) => {
+        const element = document.createElement("a");
+        const file = new Blob([...(lines.map(line => line + "\n"))], { type: 'text/plain;charset=utf-8' });
+        element.setAttribute('href', window.URL.createObjectURL(file));
+
+        element.target = "_blank";
+        element.rel = "noreferrer noopener";
+        //element.download = "configuration_local.hpp";
+        downloadParentRef.current.appendChild(element);
+        setTimeout(function () {
+            element.click();
+            element.parentNode.removeChild(element);
+        }, 200);
+
+    }
+
     const onSelect = (index, e) => {
-        // console.log("Control step " + index + " action. Set " + stepProps[index].variable + " to ", e);
         let newConfiguration = configuration.filter(config => config.variable !== stepProps[index].variable)
         newConfiguration = [...newConfiguration, { variable: stepProps[index].variable, value: e }]
         setConfiguration(newConfiguration);
-        // console.log("New config:", newConfiguration);
         setAdvanceStep(!advanceStep);
     }
 
     const onChangedText = (index, key, val) => {
-        // console.log("Control step " + index + " action. Set " + stepProps[index].variable + "[" + key + "] to ", val);
-
         if (key === '$OK') {
             setAdvanceStep(!advanceStep);
         }
@@ -85,7 +98,6 @@ const WizardStep = (props) => {
             let newConfiguration = configuration.filter(config => config.variable !== stepProps[index].variable);
             newConfiguration = [...newConfiguration, { variable: stepProps[index].variable, value: newConfig }]
             setConfiguration(newConfiguration);
-            // console.log("New config:", newConfiguration);
         }
     }
 
@@ -135,9 +147,26 @@ const WizardStep = (props) => {
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'B', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48' },
+                    { key: 'B', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48', additionalLines: ['#define RA_DRIVER_TYPE DRIVER_TYPE_ULN2003'] },
                     { key: 'N', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
                     { key: 'P', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define RA_STEPPER_SPR 200'] },
+                ]
+            },
+        },
+        {
+            title: 'RA Driver',
+            label: 'Which driver board are you using to drive the RA stepper motor:',
+            variable: 'radrv',
+            conditions: [{ variable: 'ra', neededKeys: 'N,P' }],
+            preamble: ['// Using the {v} driver for RA stepper motor'],
+            define: 'RA_DRIVER_TYPE',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'U', value: 'ULN2003', image: '/images/uln2003.png', defineValue: 'DRIVER_TYPE_ULN2003' },
+                    { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
+                    { key: 'T9U', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
+                    { key: 'T9S', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
                 ]
             },
         },
@@ -156,22 +185,6 @@ const WizardStep = (props) => {
             },
         },
         {
-            title: 'RA Driver',
-            label: 'Which driver board are you using to drive the RA stepper motor:',
-            variable: 'radrv',
-            preamble: ['// Using the {v} driver for RA stepper motor'],
-            define: 'RA_DRIVER_TYPE',
-            control: {
-                type: 'radioimg',
-                choices: [
-                    { key: 'U', value: 'ULN2003', image: '/images/uln2003.png', defineValue: 'DRIVER_TYPE_ULN2003' },
-                    { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
-                    { key: 'T9U', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
-                    { key: 'T9S', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
-                ]
-            },
-        },
-        {
             title: 'DEC Stepper',
             label: 'Which stepper motor are you using for DEC:',
             variable: 'dec',
@@ -180,11 +193,28 @@ const WizardStep = (props) => {
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'B', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48' },
+                    { key: 'B', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48', additionalLines: ['#define DEC_DRIVER_TYPE DRIVER_TYPE_ULN2003']  },
                     { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
                     { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define DEC_STEPPER_SPR 200'] },
                     { key: 'P9', value: 'NEMA 14, 0.9°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_NEMA17' },
                     { key: 'P8', value: 'NEMA 14, 1.8°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define DEC_STEPPER_SPR 200'] },
+                ]
+            },
+        },
+        {
+            title: 'DEC Driver',
+            label: 'Which driver board are you using to drive the DEC stepper motor:',
+            variable: 'decdrv',
+            conditions: [{ variable: 'dec', neededKeys: 'N9,N8,P9,P8' }],
+            preamble: ['// Using the {v} driver for DEC stepper'],
+            define: 'DEC_DRIVER_TYPE',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'U', value: 'ULN2003', image: '/images/uln2003.png', defineValue: 'DRIVER_TYPE_ULN2003' },
+                    { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
+                    { key: 'T9U', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
+                    { key: 'T9S', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
                 ]
             },
         },
@@ -199,22 +229,6 @@ const WizardStep = (props) => {
                 choices: [
                     { key: '1', value: '16 tooth purchased gear', image: '/images/cog16t.png', defineValue: '16' },
                     { key: '2', value: '20 tooth printed gear', image: '/images/cog20t.png', defineValue: '20' },
-                ]
-            },
-        },
-        {
-            title: 'DEC Driver',
-            label: 'Which driver board are you using to drive the DEC stepper motor:',
-            variable: 'decdrv',
-            preamble: ['// Using the {v} driver for DEC stepper'],
-            define: 'DEC_DRIVER_TYPE',
-            control: {
-                type: 'radioimg',
-                choices: [
-                    { key: 'U', value: 'ULN2003', image: '/images/uln2003.png', defineValue: 'DRIVER_TYPE_ULN2003' },
-                    { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
-                    { key: 'T9U', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
-                    { key: 'T9S', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
                 ]
             },
         },
@@ -239,7 +253,7 @@ const WizardStep = (props) => {
             title: 'Use WiFi',
             label: 'Do you want to enable WiFi:',
             variable: 'wifi',
-            conditions: [{ variable: 'board', neededKey: 'E' }],
+            conditions: [{ variable: 'board', neededKeys: 'E' }],
             preamble: ['// Are we using WiFi: {v}'],
             define: 'WIFI_ENABLED',
             control: {
@@ -253,7 +267,7 @@ const WizardStep = (props) => {
         {
             title: 'WiFi Mode',
             label: 'In what mode do you want to use WiFi:',
-            conditions: [{ variable: 'wifi', neededKey: 'Y' }],
+            conditions: [{ variable: 'wifi', neededKeys: 'Y' }],
             variable: 'wifimode',
             preamble: ['// Using WiFi in mode {v}'],
             define: 'WIFI_MODE',
@@ -271,8 +285,8 @@ const WizardStep = (props) => {
             label: 'Enter the WiFi parameters for Infrastructure mode:',
             variable: 'wifiparamsi',
             conditions: [
-                { variable: 'wifi', neededKey: 'Y' },
-                { variable: 'wifimode', neededKey: 'I' },
+                { variable: 'wifi', neededKeys: 'Y' },
+                { variable: 'wifimode', neededKeys: 'I' },
             ],
             preamble: ['// Define the SSID, WPA key and host name for the network'],
             define: '',
@@ -290,8 +304,8 @@ const WizardStep = (props) => {
             label: 'Enter the WiFi parameters for Access Point mode:',
             variable: 'wifiparamsa',
             conditions: [
-                { variable: 'wifi', neededKey: 'Y' },
-                { variable: 'wifimode', neededKey: 'A' },
+                { variable: 'wifi', neededKeys: 'Y' },
+                { variable: 'wifimode', neededKeys: 'A' },
             ],
             define: '',
             preamble: ['// Define the WPA key and host name for the network'],
@@ -308,8 +322,8 @@ const WizardStep = (props) => {
             label: 'Enter the WiFi parameters for Failover mode:',
             variable: 'wifiparamsf',
             conditions: [
-                { variable: 'wifi', neededKey: 'Y' },
-                { variable: 'wifimode', neededKey: 'F' },
+                { variable: 'wifi', neededKeys: 'Y' },
+                { variable: 'wifimode', neededKeys: 'F' },
             ],
             define: '',
             preamble: ['// Define the SSID, WPA keys and host name for the network'],
@@ -404,16 +418,14 @@ const WizardStep = (props) => {
             }
             defines = [...defines, ''];
         });
-        // console.log(defines);
-
-
+        
         return <div class='steps-container'>
             <div class='steps-column'>
                 <Steps current={stepIndex} direction='vertical'>
                     {steps}
                 </Steps>
             </div>
-            <div class='list-container'>
+            <div class='list-container' ref={downloadParentRef}>
                 <h2>Local configuration file</h2>
                 <p>Copy/paste the following into your configuration_local.hpp file</p>
                 {
@@ -421,7 +433,14 @@ const WizardStep = (props) => {
                 }
                 <br />
                 <br />
-                <Button type='primary' onClick={() => onRestart()}>Restart</Button>
+                <div className='back-button' >
+                    <Button type='primary' onClick={() => downloadTxtFile(defines)}>Open as Text in new Tab</Button>
+                </div>
+                
+
+                <div className='back-button' >
+                    <Button type='primary' onClick={() => onRestart()}>Restart</Button>
+                </div>
             </div>
         </div>
 
