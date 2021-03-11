@@ -6,11 +6,8 @@ they used to build their tracker and then spits out the defines that need to be 
 This is a very early version. There are probably a few other things that we could gather from this wizard.
 
 # Roadmap
-- Pulley teeth - query for 16T vs. 20T
-- Wifi settings - We should gather these here and export them to the configuration file.
 - Stepper parameters - Should we support RMS Current, speed, acceleration?
 - Microstep settings?
-- Digital Level (Gyro) - support axis swap?
 - AzAlt addon - currently not implemented.
 - Bluetooth - not currently queried.
 - Dark mode support?
