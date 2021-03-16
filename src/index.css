@@ -1,5 +1,5 @@
 body {
-  padding: 10pt;
+  padding: 0pt;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
@@ -27,7 +27,7 @@ body {
 
 .steps-container {
   display:flex;
-
+  padding: 10px;
 }
 
 .steps-column {
@@ -49,4 +49,113 @@ body {
   align-self: center;
   text-align: center;
   margin-top: 12pt;
+}
+
+.full-bg-size {
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-attachment: fixed;
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+}
+
+.bg-dim {
+  width: 100%;
+  height: 100%;
+  position: fixed;
+}
+
+.intro-header {
+  color: #ffffff;
+  font-size: 80px;
+  animation: fadeIn ease 5s;
+  -webkit-animation: fadeIn ease 5s;
+}
+
+.intro-link {
+  padding-left: 35pt;
+  padding-right: 35pt;
+  padding-top: 10pt;
+  padding-bottom: 10pt;
+  border-radius: 50pt;
+  background: rgba(25, 181, 254, 1);
+  font-size: 20pt;
+  color: #ffffff;
+  border: 2px solid rgb(255, 255, 255);
+  animation: fadeIn ease 5s;
+  -webkit-animation: fadeIn ease 5s;
+}
+
+.intro-link:hover {
+  background: rgb(68, 180, 231);
+  color: #000000;
+}
+
+.intro-link-parent {
+  position: relative;
+}
+
+.intro-link-child {
+  text-align: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.intro-horizontal-bar {
+  height: 450px;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@-moz-keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@-webkit-keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@-o-keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@-ms-keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }
