@@ -171,6 +171,23 @@ const WizardStep = (props) => {
             },
         },
         {
+            title: 'RA Advanced Settings',
+            label: 'Enter the RA stepper specs and desired settings:',
+            variable: 'rapower',
+            conditions: [{ variable: 'radrv', neededKeys: 'T9U' }],
+            define: '',
+            control: {
+                type: 'textinput',
+                choices: [
+                    { key: 'P', label: 'Power rating in mA', defaultValue: 250, defineLine: '#define RA_MOTOR_CURRENT_RATING      {0} // mA' },
+                    { key: 'O', label: 'Operating percentage', defaultValue: 80, defineLine: '#define RA_OPERATING_CURRENT_SETTING {0} // %' },
+                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 3000, defineLine: '#define RA_STEPPER_ACCELERATION {0}' },
+                    { key: 'S', label: 'Microstepping while slewing', defaultValue: 8, defineLine: '#define RA_SLEW_MICROSTEPPING {0}' },
+                    { key: 'T', label: 'Microstepping while tracking', defaultValue: 64, defineLine: '#define RA_TRACKING_MICROSTEPPING {0}', additionalLines:['// #define RA_SERIAL_PORT Serial3  // You may need to uncomment or change this, depending on how you wired the UART'] },
+                ]
+            },
+        },
+        {
             title: 'RA Pulley Teeth',
             label: 'How many teeth does your RA gear have?',
             variable: 'racog',
@@ -215,6 +232,23 @@ const WizardStep = (props) => {
                     { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
                     { key: 'T9U', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
                     { key: 'T9S', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
+                ]
+            },
+        },
+        {
+            title: 'DEC Advanced Settings',
+            label: 'Enter the DEC stepper specs and desired settings:',
+            variable: 'decpower',
+            conditions: [{ variable: 'decdrv', neededKeys: 'T9U' }],
+            define: '',
+            control: {
+                type: 'textinput',
+                choices: [
+                    { key: 'P', label: 'Power rating in mA', defaultValue: 250, defineLine: '#define DEC_MOTOR_CURRENT_RATING      {0} // mA' },
+                    { key: 'O', label: 'Operating percentage', defaultValue: 80, defineLine: '#define DEC_OPERATING_CURRENT_SETTING {0} // %' },
+                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 3000, defineLine: '#define DEC_STEPPER_ACCELERATION {0}' },
+                    { key: 'S', label: 'Microstepping while slewing', defaultValue: 16, defineLine: '#define DEC_SLEW_MICROSTEPPING {0}' },
+                    { key: 'T', label: 'Microstepping while tracking', defaultValue: 64, defineLine: '#define DEC_GUIDE_MICROSTEPPING {0}', additionalLines:['// #define DEC_SERIAL_PORT Serial3  // You may need to uncomment or change this, depending on how you wired the UART']  },
                 ]
             },
         },
@@ -404,6 +438,9 @@ const WizardStep = (props) => {
                     let val = (configVal ? configVal.value : null) || choice.defaultValue || '';
                     defineLine = choice.defineLine.replace('{0}', val);
                     defines = [...defines, defineLine];
+                    if (choice.additionalLines){
+                        defines = [...defines, ...choice.additionalLines];
+                    }
                 })
             }
             else {
@@ -419,17 +456,17 @@ const WizardStep = (props) => {
             defines = [...defines, ''];
         });
         
-        return <div class='steps-container'>
-            <div class='steps-column'>
+        return <div className='steps-container'>
+            <div className='steps-column'>
                 <Steps current={stepIndex} direction='vertical'>
                     {steps}
                 </Steps>
             </div>
-            <div class='list-container' ref={downloadParentRef}>
+            <div className='list-container' ref={downloadParentRef}>
                 <h2>Local configuration file</h2>
                 <p>Copy/paste the following into your Configuration_local.hpp file</p>
                 {
-                    defines.map(define => <p class='code'>{define}&nbsp;</p>)
+                    defines.map(define => <p className='code'>{define}&nbsp;</p>)
                 }
                 <br />
                 <br />
@@ -495,13 +532,13 @@ const WizardStep = (props) => {
                 break;
         }
 
-        return <div class='steps-container'>
-            <div class='steps-column'>
+        return <div className='steps-container'>
+            <div className='steps-column'>
                 <Steps current={stepIndex} direction='vertical'>
                     {steps}
                 </Steps>
             </div>
-            <div class='list-container'>
+            <div className='list-container'>
                 <div className='step-title'>{stepProps[stepIndex].title}</div>
                 <div className='step-description'>{stepProps[stepIndex].label}</div>
                 <div>
