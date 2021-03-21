@@ -26,14 +26,12 @@ const WizardStep = (props) => {
         setShowResult(false);
     };
 
-    useEffect(() => {
-        let nextStepIndex = stepIndex + 1;
-
-        // Check whether the current step needs to be skipped
+    const shouldSkipStep = (index) => {
+        let startIndex = index;
         let skip = true;
-        while (nextStepIndex < stepProps.length) {
+        while (index < stepProps.length) {
             skip = false;
-            let nextStep = stepProps[nextStepIndex];
+            let nextStep = stepProps[index];
             if (nextStep.conditions) {
                 let result = true;
                 nextStep.conditions.forEach(cond => {
@@ -50,16 +48,22 @@ const WizardStep = (props) => {
             }
 
             if (!skip) {
-                setStepIndex(nextStepIndex);
-                break;
+                return { skip: startIndex !== index, nextIndex: index, atEnd: false };
             }
             else {
-                nextStepIndex++;
+                index++;
             }
         }
 
-        if (skip) {
-            setStepIndex(nextStepIndex);
+        return { atEnd: index >= stepProps.length, skip: startIndex !== index, nextIndex: index };
+    }
+
+    useEffect(() => {
+        let nextStepIndex = stepIndex + 1;
+        let res = shouldSkipStep(nextStepIndex);
+        setStepIndex(res.nextIndex);
+
+        if (res.atEnd) {
             setShowResult(true);
         }
     }, [advanceStep]);
@@ -89,6 +93,19 @@ const WizardStep = (props) => {
 
     const onChangedText = (index, key, val) => {
         if (key === '$OK') {
+            // The NEXT button on text inputs was hit. We nee to check if the config is here, which only happens when
+            // something is edited. If the user accepts all defaults, configuration won't have an entry for this step
+            // yet. We detect this and add all the text input fields with their default values before advancing.
+            let currentConfig = configuration.find(config => config.variable === stepProps[index].variable);
+            if (!currentConfig) {
+                // It is not, so create it with default values
+                let prop = stepProps[index];
+                let newConfig = prop.control.choices.map((v) => { return { key: v.key, value: v.defaultValue || '' } });
+                let newConfiguration = configuration.filter(config => config.variable !== stepProps[index].variable);
+                newConfiguration = [...newConfiguration, { variable: prop.variable, value: newConfig }]
+                setConfiguration(newConfiguration);
+            }
+
             setAdvanceStep(!advanceStep);
         }
         else {
@@ -100,6 +117,23 @@ const WizardStep = (props) => {
             setConfiguration(newConfiguration);
         }
     }
+    const teststepProps = [
+        {
+            title: 'WiFi Access Point Setup',
+            label: 'Enter the WiFi parameters for Access Point mode:',
+            variable: 'wifiparamsa',
+            define: '',
+            preamble: ['// Define the WPA key and host name for the network'],
+            control: {
+                type: 'textinput',
+                choices: [
+                    { key: 'P', label: 'WPA Key for OAT hotspot', defineLine: '#define WIFI_AP_MODE_WPAKEY "{0}"' },
+                    { key: 'H', label: 'Hostname', defaultValue: 'OATScope', defineLine: '#define WIFI_HOSTNAME "{0}"' },
+                ]
+            },
+        },
+
+    ]
 
     const stepProps = [
         {
@@ -154,8 +188,8 @@ const WizardStep = (props) => {
         {
             title: 'RA Stepper',
             label: 'Which stepper motor are you using for RA:',
-            variable: 'ra',
-            preamble: ['// Stepper types/models', ' // See supported stepper values. Change according to the steppers you are using', '// Using the {v} stepper for RA'],
+            variable: 'rastpr',
+            preamble: ['////////////////////////////////', '// RA Stepper configuration ', ' // See supported stepper values. Change according to the steppers you are using', '// Using the {v} stepper for RA'],
             define: 'RA_STEPPER_TYPE',
             control: {
                 type: 'radioimg',
@@ -170,7 +204,7 @@ const WizardStep = (props) => {
             title: 'RA Driver',
             label: 'Which driver board are you using to drive the RA stepper motor:',
             variable: 'radrv',
-            conditions: [{ variable: 'ra', neededKeys: 'N,P' }],
+            conditions: [{ variable: 'rastpr', neededKeys: 'N,P' }],
             preamble: ['// Using the {v} driver for RA stepper motor'],
             define: 'RA_DRIVER_TYPE',
             control: {
@@ -185,19 +219,35 @@ const WizardStep = (props) => {
         },
         {
             title: 'RA Advanced Settings',
-            label: 'Enter the RA stepper specs and desired settings:',
+            label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the RA stepper specs and desired settings:',
             variable: 'rapower',
-            conditions: [{variable: 'fwversion', neededKeys: 'V19'}, { variable: 'radrv', neededKeys: 'T9U' }],
+            conditions: [{ variable: 'fwversion', neededKeys: 'V19' }, { variable: 'radrv', neededKeys: 'T9U' }],
             preamble: ['// Define some RA stepper motor settings'],
             define: '',
             control: {
                 type: 'textinput',
                 choices: [
-                    { key: 'P', label: 'Power rating in mA', defineLine: '#define RA_MOTOR_CURRENT_RATING      {0} // mA' },
+                    { key: 'P', label: 'Power rating in mA', defaultValue: 900, defineLine: '#define RA_MOTOR_CURRENT_RATING      {0} // mA' },
                     { key: 'O', label: 'Operating percentage', defaultValue: 80, defineLine: '#define RA_OPERATING_CURRENT_SETTING {0} // %' },
                     { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 3000, defineLine: '#define RA_STEPPER_ACCELERATION {0}' },
+                    { key: 'V', label: 'Speed (steps/s)', defaultValue: 1200, defineLine: '#define RA_STEPPER_SPEED {0}' },
                     { key: 'S', label: 'Microstepping while slewing', defaultValue: 8, defineLine: '#define RA_SLEW_MICROSTEPPING {0}' },
-                    { key: 'T', label: 'Microstepping while tracking', defaultValue: 64, defineLine: '#define RA_TRACKING_MICROSTEPPING {0}', additionalLines:['// #define RA_SERIAL_PORT Serial3  // You may need to uncomment or change this, depending on how you wired the UART'] },
+                    { key: 'T', label: 'Microstepping while tracking', defaultValue: 64, defineLine: '#define RA_TRACKING_MICROSTEPPING {0}', additionalLines: ['// #define RA_SERIAL_PORT Serial3  // You may need to uncomment or change this, depending on how you wired the UART'] },
+                ]
+            },
+        },
+        {
+            title: 'RA Advanced Settings',
+            label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the RA stepper specs and desired settings:',
+            variable: 'rapowerbjy',
+            conditions: [{ variable: 'fwversion', neededKeys: 'V18' }, { variable: 'rastpr', neededKeys: 'B' }],
+            preamble: ['// Define some RA stepper motor settings'],
+            define: '',
+            control: {
+                type: 'textinput',
+                choices: [
+                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 600, defineLine: '#define RA_STEPPER_ACCELERATION {0}' },
+                    { key: 'V', label: 'Speed (steps/s)', defaultValue: 400, defineLine: '#define RA_STEPPER_SPEED {0}' },
                 ]
             },
         },
@@ -218,13 +268,13 @@ const WizardStep = (props) => {
         {
             title: 'DEC Stepper',
             label: 'Which stepper motor are you using for DEC:',
-            variable: 'dec',
-            preamble: ['// Stepper types/models', ' // See supported stepper values. Change according to the steppers you are using', '// Using the {v} stepper for DEC'],
+            variable: 'decstpr',
+            preamble: ['////////////////////////////////', '// DEC Stepper configuration ', ' // See supported stepper values. Change according to the steppers you are using', '// Using the {v} stepper for DEC'],
             define: 'DEC_STEPPER_TYPE',
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'B', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48', additionalLines: ['#define DEC_DRIVER_TYPE DRIVER_TYPE_ULN2003']  },
+                    { key: 'B', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48', additionalLines: ['#define DEC_DRIVER_TYPE DRIVER_TYPE_ULN2003'] },
                     { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
                     { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define DEC_STEPPER_SPR 200'] },
                     { key: 'P9', value: 'NEMA 14, 0.9°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_NEMA17' },
@@ -236,7 +286,7 @@ const WizardStep = (props) => {
             title: 'DEC Driver',
             label: 'Which driver board are you using to drive the DEC stepper motor:',
             variable: 'decdrv',
-            conditions: [{ variable: 'dec', neededKeys: 'N9,N8,P9,P8' }],
+            conditions: [{ variable: 'decstpr', neededKeys: 'N9,N8,P9,P8' }],
             preamble: ['// Using the {v} driver for DEC stepper'],
             define: 'DEC_DRIVER_TYPE',
             control: {
@@ -251,19 +301,35 @@ const WizardStep = (props) => {
         },
         {
             title: 'DEC Advanced Settings',
-            label: 'Enter the DEC stepper specs and desired settings:',
+            label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the DEC stepper specs and desired settings:',
             variable: 'decpower',
-            conditions: [{variable: 'fwversion', neededKeys: 'V19'}, { variable: 'decdrv', neededKeys: 'T9U' }],
+            conditions: [{ variable: 'fwversion', neededKeys: 'V19' }, { variable: 'decdrv', neededKeys: 'T9U' }],
             preamble: ['// Define some DEC stepper motor settings'],
             define: '',
             control: {
                 type: 'textinput',
                 choices: [
-                    { key: 'P', label: 'Power rating in mA', defaultValue: 250, defineLine: '#define DEC_MOTOR_CURRENT_RATING      {0} // mA' },
+                    { key: 'P', label: 'Power rating in mA', defaultValue: 900, defineLine: '#define DEC_MOTOR_CURRENT_RATING      {0} // mA' },
                     { key: 'O', label: 'Operating percentage', defaultValue: 80, defineLine: '#define DEC_OPERATING_CURRENT_SETTING {0} // %' },
                     { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 3000, defineLine: '#define DEC_STEPPER_ACCELERATION {0}' },
+                    { key: 'V', label: 'Speed (steps/s)', defaultValue: 1200, defineLine: '#define DEC_STEPPER_SPEED {0}' },
                     { key: 'S', label: 'Microstepping while slewing', defaultValue: 16, defineLine: '#define DEC_SLEW_MICROSTEPPING {0}' },
-                    { key: 'T', label: 'Microstepping while tracking', defaultValue: 64, defineLine: '#define DEC_GUIDE_MICROSTEPPING {0}', additionalLines:['// #define DEC_SERIAL_PORT Serial3  // You may need to uncomment or change this, depending on how you wired the UART']  },
+                    { key: 'T', label: 'Microstepping while tracking', defaultValue: 64, defineLine: '#define DEC_GUIDE_MICROSTEPPING {0}', additionalLines: ['// #define DEC_SERIAL_PORT Serial3  // You may need to uncomment or change this, depending on how you wired the UART'] },
+                ]
+            },
+        },
+        {
+            title: 'DEC Advanced Settings',
+            label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the DEC stepper specs and desired settings:',
+            variable: 'decpowerbjy',
+            conditions: [{ variable: 'fwversion', neededKeys: 'V18' }, { variable: 'decstpr', neededKeys: 'B' }],
+            preamble: ['// Define some DEC stepper motor settings'],
+            define: '',
+            control: {
+                type: 'textinput',
+                choices: [
+                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 600, defineLine: '#define DEC_STEPPER_ACCELERATION {0}' },
+                    { key: 'V', label: 'Speed (steps/s)', defaultValue: 400, defineLine: '#define DEC_STEPPER_SPEED {0}' },
                 ]
             },
         },
@@ -286,7 +352,7 @@ const WizardStep = (props) => {
             label: 'What kind of display are you using:',
             variable: 'disp',
             define: 'DISPLAY_TYPE',
-            preamble: ['// Define the type of display we are using. Currently {v}'],
+            preamble: ['////////////////////////////////', '// Display configuration ', '// Define the type of display we are using. Currently: {v}'],
             control: {
                 type: 'radioimg',
                 choices: [
@@ -303,7 +369,7 @@ const WizardStep = (props) => {
             label: 'Do you want to enable WiFi:',
             variable: 'wifi',
             conditions: [{ variable: 'board', neededKeys: 'E' }],
-            preamble: ['// Are we using WiFi: {v}'],
+            preamble: ['////////////////////////////////', '// WiFi configuration ', '// Are we using WiFi: {v}'],
             define: 'WIFI_ENABLED',
             control: {
                 type: 'radioimg',
@@ -390,7 +456,7 @@ const WizardStep = (props) => {
             title: 'GPS',
             label: 'Do you have the GPS add on:',
             variable: 'gps',
-            preamble: ['// Define whether we have the GPS addon or not. Currently: {v}'],
+            preamble: ['////////////////////////////////', '// GPS Addon configuration ', '// Define whether we have the GPS addon or not. Currently: {v}'],
             define: 'USE_GPS',
             control: {
                 type: 'radioimg',
@@ -404,7 +470,7 @@ const WizardStep = (props) => {
             title: 'Level',
             label: 'Do you have the Digital Level add on:',
             variable: 'gyro',
-            preamble: ['// Define whether we have the Digital Level or not. Currently: {v}'],
+            preamble: ['////////////////////////////////', '// Digital Level Addon configuration ', '// Define whether we have the Digital Level or not. Currently: {v}'],
             define: 'USE_GYRO_LEVEL',
             control: {
                 type: 'radioimg',
@@ -412,6 +478,114 @@ const WizardStep = (props) => {
                     { key: 'N', value: 'No Digital Level', image: '/images/none.png', defineValue: '0' },
                     { key: 'Y', value: 'MPU-6050 Gyroscope', image: '/images/levelmpu6050.png', defineValue: '1', additionalLines: ['#define GYRO_AXIS_SWAP 0'] },
                     { key: 'Y2', value: 'MPU-6050 Gyroscope with axes swapped', image: '/images/levelmpu6050.png', defineValue: '1', additionalLines: ['#define GYRO_AXIS_SWAP 1'] },
+                ]
+            },
+        },
+        {
+            title: 'Auto Polar Align',
+            label: 'Do you have the AutoPA add on:',
+            variable: 'autopa',
+            preamble: ['////////////////////////////////', '// AutoPA Addon configuration ', '// Define whether we have the AutoPA add on or not. Currently: {v}'],
+            define: 'USE_AZIMUTH_ALTITUDE_MOTORS',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'N', value: 'No AutoPA', image: '/images/none.png', defineValue: '0' },
+                    { key: 'Y', value: 'AutoPA is installed', image: '/images/autopa.png', defineValue: '1' },
+                ]
+            },
+        },
+        {
+            title: 'Azimuth Stepper',
+            label: 'Which stepper motor are you using for the Azimuth:',
+            variable: 'az',
+            conditions: [{ variable: 'autopa', neededKeys: 'Y' }],
+            preamble: ['// Using the {v} stepper for AZ'],
+            define: 'AZ_STEPPER_TYPE',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'B', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48', additionalLines: ['#define AZ_DRIVER_TYPE DRIVER_TYPE_ULN2003'] },
+                    { key: 'N', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
+                ]
+            },
+        },
+        {
+            title: 'Azimuth Driver',
+            label: 'Which driver board are you using to drive the Azimuth stepper motor:',
+            variable: 'azdrv',
+            conditions: [{ variable: 'az', neededKeys: 'N' }],
+            preamble: ['// Using the {v} driver for AZ stepper motor'],
+            define: 'AZ_DRIVER_TYPE',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'U', value: 'ULN2003', image: '/images/uln2003.png', defineValue: 'DRIVER_TYPE_ULN2003' },
+                    { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
+                    { key: 'T9U', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
+                    { key: 'T9S', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
+                ]
+            },
+        },
+        {
+            title: 'Azimuth Advanced Settings',
+            label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the AZ stepper specs and desired settings:',
+            variable: 'azpower',
+            conditions: [{ variable: 'fwversion', neededKeys: 'V19' }, { variable: 'azdrv', neededKeys: 'T9U' }],
+            preamble: ['// Define AZ stepper motor power settings'],
+            define: '',
+            control: {
+                type: 'textinput',
+                choices: [
+                    { key: 'P', label: 'Power rating in mA', defaultValue: 900, defineLine: '#define AZ_MOTOR_CURRENT_RATING      {0} // mA' },
+                    { key: 'O', label: 'Operating percentage', defaultValue: 80, defineLine: '#define AZ_OPERATING_CURRENT_SETTING {0} // %' },
+                ]
+            },
+        },
+        {
+            title: 'Altitude Stepper',
+            label: 'Which stepper motor are you using for the Altitude:',
+            variable: 'alt',
+            conditions: [{ variable: 'autopa', neededKeys: 'Y' }],
+            preamble: ['// Using the {v} stepper for ALT'],
+            define: 'ALT_STEPPER_TYPE',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'B', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48', additionalLines: ['#define ALT_DRIVER_TYPE DRIVER_TYPE_ULN2003'] },
+                    { key: 'N', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
+                ]
+            },
+        },
+        {
+            title: 'Altitude Driver',
+            label: 'Which driver board are you using to drive the Altitude stepper motor:',
+            variable: 'altdrv',
+            conditions: [{ variable: 'alt', neededKeys: 'N' }],
+            preamble: ['// Using the {v} driver for ALT stepper motor'],
+            define: 'ALT_DRIVER_TYPE',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'U', value: 'ULN2003', image: '/images/uln2003.png', defineValue: 'DRIVER_TYPE_ULN2003' },
+                    { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
+                    { key: 'T9U', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
+                    { key: 'T9S', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
+                ]
+            },
+        },
+        {
+            title: 'Altitude Advanced Settings',
+            label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the ALT stepper specs and desired settings:',
+            variable: 'altpower',
+            conditions: [{ variable: 'fwversion', neededKeys: 'V19' }, { variable: 'altdrv', neededKeys: 'T9U' }],
+            preamble: ['// Define ALT stepper motor power settings'],
+            define: '',
+            control: {
+                type: 'textinput',
+                choices: [
+                    { key: 'P', label: 'Power rating in mA', defaultValue: 900, defineLine: '#define ALT_MOTOR_CURRENT_RATING      {0} // mA' },
+                    { key: 'O', label: 'Operating percentage', defaultValue: 80, defineLine: '#define ALT_OPERATING_CURRENT_SETTING {0} // %' },
                 ]
             },
         },
@@ -434,7 +608,14 @@ const WizardStep = (props) => {
             }
         }
 
-        steps.push(<Step title={title} description={description} />)
+        let skipState = shouldSkipStep(index);
+        if ((skipState.skip) && (index < stepIndex)) {
+            description = "N/A, skipped.";
+        }
+
+        if ((!skipState.skip) || (index <= stepIndex)) {
+            steps.push(<Step title={title} description={description} />)
+        }
     });
 
     steps.push(<Step title='Completed' />)
@@ -453,7 +634,7 @@ const WizardStep = (props) => {
                     let val = (configVal ? configVal.value : null) || choice.defaultValue || '';
                     defineLine = choice.defineLine.replace('{0}', val);
                     defines = [...defines, defineLine];
-                    if (choice.additionalLines){
+                    if (choice.additionalLines) {
                         defines = [...defines, ...choice.additionalLines];
                     }
                 })
@@ -463,7 +644,7 @@ const WizardStep = (props) => {
                 if (property.preamble) {
                     defines = [...defines, ...(property.preamble.map((pre) => pre.replace('{v}', propertyValue.value)))];
                 }
-                if (property.define){
+                if (property.define) {
                     defines = [...defines, '#define ' + property.define + ' ' + propertyValue.defineValue];
                 }
                 if (propertyValue.additionalLines) {
@@ -472,7 +653,7 @@ const WizardStep = (props) => {
             }
             defines = [...defines, ''];
         });
-        
+
         return <div className='steps-container'>
             <div className='steps-column'>
                 <Steps current={stepIndex} direction='vertical'>
@@ -485,12 +666,13 @@ const WizardStep = (props) => {
                 {
                     defines.map(define => <p className='code'>{define}&nbsp;</p>)
                 }
+                <p className='code'>#define DEBUG_LEVEL (DEBUG_NONE)</p>
                 <br />
                 <br />
                 <div className='back-button' >
                     <Button type='primary' onClick={() => downloadTxtFile(defines)}>Open as Text in new Tab</Button>
                 </div>
-                
+
 
                 <div className='back-button' >
                     <Button type='primary' onClick={() => onRestart()}>Restart</Button>

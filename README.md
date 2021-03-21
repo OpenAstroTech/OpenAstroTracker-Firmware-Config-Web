@@ -3,15 +3,13 @@ This is a small React-based app, using AntDesign that asks the user a bunch of q
 they used to build their tracker and then spits out the defines that need to be placed in configuration_local.hpp.
 
 # Status
-This is a very early version. There are probably a few other things that we could gather from this wizard.
+Captures the great majority of use cases for the OAT. Please file Issues if you would like to see more variables supported, or if you are 
+able, please create and submit a PR with an extra step in the code. It's pretty easy to add a new stpe to the Wizard, just look at the
+stepProps array in WizardSteps.jsx and add a new array item there. 
 
 # Roadmap
-- Stepper parameters - Should we support RMS Current, speed, acceleration?
-- Microstep settings?
-- AzAlt addon - currently not implemented.
 - Bluetooth - not currently queried.
 - Dark mode support?
-
 
 # Getting Started 
 
