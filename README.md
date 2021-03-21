@@ -1,6 +1,8 @@
 # OAT Configurator
-This is a small React-based app, using AntDesign that asks the user a bunch of questions about what components
+This is the source code for a small React-based app, using AntDesign that asks the user a bunch of questions about what components
 they used to build their tracker and then spits out the defines that need to be placed in configuration_local.hpp.
+
+It can be used live at https://config.openastrotech.com
 
 # Status
 Captures the great majority of use cases for the OAT. Please file Issues if you would like to see more variables supported, or if you are 
@@ -9,11 +11,11 @@ stepProps array in WizardSteps.jsx and add a new array item there.
 
 # Roadmap
 - Bluetooth - not currently queried.
-- Dark mode support?
+- Dark mode support.
 
-# Getting Started 
+# Using Source code
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+If you want to constribute to stig project, you'll need to get the source code. If you want to just use it, simply go to https://config.openastrotech.com
 
 ## Available Scripts
 
@@ -26,14 +28,3 @@ Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
 The page will reload if you make edits.\
 You will also see any lint errors in the console.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
