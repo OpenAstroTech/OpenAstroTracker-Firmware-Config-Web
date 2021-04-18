@@ -230,13 +230,12 @@ const WizardStep = (props) => {
                     { key: 'P', label: 'Power rating in mA', defaultValue: 900, defineLine: '#define RA_MOTOR_CURRENT_RATING      {0} // mA' },
                     { key: 'O', label: 'Operating percentage', defaultValue: 80, defineLine: '#define RA_OPERATING_CURRENT_SETTING {0} // %' },
                     { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 3000, defineLine: '#define RA_STEPPER_ACCELERATION {0}' },
-                    { key: 'V', label: 'Speed (steps/s)', defaultValue: 1200, defineLine: '#define RA_STEPPER_SPEED {0}' },
+                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: 1200, defineLine: '#define RA_STEPPER_SPEED {0}' },
                     { key: 'S', label: 'Microstepping while slewing', defaultValue: 8, defineLine: '#define RA_SLEW_MICROSTEPPING {0}' },
                     { key: 'T', label: 'Microstepping while tracking', defaultValue: 64, defineLine: '#define RA_TRACKING_MICROSTEPPING {0}', 
                                 additionalLines: [
-                                    '// #define RA_SERIAL_PORT Serial3  // You may need to uncomment or change this, depending on how you wired the UART',
-                                    ' // TMC2209 Stealth Mode (spreadCycle) - More precise tracking when not in stealth mode (set to 0), but steppers will make a high-pitched sound.',
-                                    '#define RA_UART_STEALTH_MODE   1'
+                                    ' // TMC2209 Stealth Mode (spreadCycle) - When set to 0, tracking is more precise, but noisy (high-pitched sound). When set to 1, they are silent.',
+                                    '#define RA_UART_STEALTH_MODE     0'
                                 ]},
                 ]
             },
@@ -252,7 +251,7 @@ const WizardStep = (props) => {
                 type: 'textinput',
                 choices: [
                     { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 600, defineLine: '#define RA_STEPPER_ACCELERATION {0}' },
-                    { key: 'V', label: 'Speed (steps/s)', defaultValue: 400, defineLine: '#define RA_STEPPER_SPEED {0}' },
+                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: 400, defineLine: '#define RA_STEPPER_SPEED {0}' },
                 ]
             },
         },
@@ -317,13 +316,12 @@ const WizardStep = (props) => {
                     { key: 'P', label: 'Power rating in mA', defaultValue: 900, defineLine: '#define DEC_MOTOR_CURRENT_RATING      {0} // mA' },
                     { key: 'O', label: 'Operating percentage', defaultValue: 80, defineLine: '#define DEC_OPERATING_CURRENT_SETTING {0} // %' },
                     { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 3000, defineLine: '#define DEC_STEPPER_ACCELERATION {0}' },
-                    { key: 'V', label: 'Speed (steps/s)', defaultValue: 1200, defineLine: '#define DEC_STEPPER_SPEED {0}' },
+                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: 1200, defineLine: '#define DEC_STEPPER_SPEED {0}' },
                     { key: 'S', label: 'Microstepping while slewing', defaultValue: 16, defineLine: '#define DEC_SLEW_MICROSTEPPING {0}' },
                     { key: 'T', label: 'Microstepping while tracking', defaultValue: 64, defineLine: '#define DEC_GUIDE_MICROSTEPPING {0}', 
                                 additionalLines: [
-                                    '// #define DEC_SERIAL_PORT Serial3  // You may need to uncomment or change this, depending on how you wired the UART',
-                                    ' // TMC2209 Stealth Mode (spreadCycle) - More precise tracking when not in stealth mode (set to 0), but steppers will make a high-pitched sound.',
-                                    '#define DEC_UART_STEALTH_MODE   1'
+                                    ' // TMC2209 Stealth Mode (spreadCycle) - When set to 0, tracking is more precise, but noisy (high-pitched sound). When set to 1, they are silent.',
+                                    '#define DEC_UART_STEALTH_MODE     0'
                                 ] },
                 ]
             },
@@ -339,7 +337,7 @@ const WizardStep = (props) => {
                 type: 'textinput',
                 choices: [
                     { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 600, defineLine: '#define DEC_STEPPER_ACCELERATION {0}' },
-                    { key: 'V', label: 'Speed (steps/s)', defaultValue: 400, defineLine: '#define DEC_STEPPER_SPEED {0}' },
+                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: 400, defineLine: '#define DEC_STEPPER_SPEED {0}' },
                 ]
             },
         },
