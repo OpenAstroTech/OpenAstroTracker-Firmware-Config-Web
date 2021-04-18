@@ -232,7 +232,12 @@ const WizardStep = (props) => {
                     { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 3000, defineLine: '#define RA_STEPPER_ACCELERATION {0}' },
                     { key: 'V', label: 'Speed (steps/s)', defaultValue: 1200, defineLine: '#define RA_STEPPER_SPEED {0}' },
                     { key: 'S', label: 'Microstepping while slewing', defaultValue: 8, defineLine: '#define RA_SLEW_MICROSTEPPING {0}' },
-                    { key: 'T', label: 'Microstepping while tracking', defaultValue: 64, defineLine: '#define RA_TRACKING_MICROSTEPPING {0}', additionalLines: ['// #define RA_SERIAL_PORT Serial3  // You may need to uncomment or change this, depending on how you wired the UART'] },
+                    { key: 'T', label: 'Microstepping while tracking', defaultValue: 64, defineLine: '#define RA_TRACKING_MICROSTEPPING {0}', 
+                                additionalLines: [
+                                    '// #define RA_SERIAL_PORT Serial3  // You may need to uncomment or change this, depending on how you wired the UART',
+                                    ' // TMC2209 Stealth Mode (spreadCycle) - More precise tracking when not in stealth mode (set to 0), but steppers will make a high-pitched sound.',
+                                    '#define RA_UART_STEALTH_MODE   1'
+                                ]},
                 ]
             },
         },
@@ -314,7 +319,12 @@ const WizardStep = (props) => {
                     { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 3000, defineLine: '#define DEC_STEPPER_ACCELERATION {0}' },
                     { key: 'V', label: 'Speed (steps/s)', defaultValue: 1200, defineLine: '#define DEC_STEPPER_SPEED {0}' },
                     { key: 'S', label: 'Microstepping while slewing', defaultValue: 16, defineLine: '#define DEC_SLEW_MICROSTEPPING {0}' },
-                    { key: 'T', label: 'Microstepping while tracking', defaultValue: 64, defineLine: '#define DEC_GUIDE_MICROSTEPPING {0}', additionalLines: ['// #define DEC_SERIAL_PORT Serial3  // You may need to uncomment or change this, depending on how you wired the UART'] },
+                    { key: 'T', label: 'Microstepping while tracking', defaultValue: 64, defineLine: '#define DEC_GUIDE_MICROSTEPPING {0}', 
+                                additionalLines: [
+                                    '// #define DEC_SERIAL_PORT Serial3  // You may need to uncomment or change this, depending on how you wired the UART',
+                                    ' // TMC2209 Stealth Mode (spreadCycle) - More precise tracking when not in stealth mode (set to 0), but steppers will make a high-pitched sound.',
+                                    '#define DEC_UART_STEALTH_MODE   1'
+                                ] },
                 ]
             },
         },
