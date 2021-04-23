@@ -11,6 +11,14 @@ import {
 } from 'antd';
 
 
+// TODO: Support full expressions. 
+// For example:
+// ($fwversion IN [V19, V197]) AND ($azdrv907 EQ T9U)
+// ($fwversion IN [V19, V197]) AND ($azdrv907 EQ T9U) OR (${azdrv} EQ T9U))
+// Needed operators : EQ, NEQ, IN, NOTIN
+// $ denotes variable
+// Parentheses nest
+
 const { Step } = Steps;
 
 const WizardStep = (props) => {
@@ -150,8 +158,8 @@ const WizardStep = (props) => {
                 type: 'radioimg',
                 choices: [
                     { key: 'V18',  value: 'V1.8.77 and earlier', image: '/images/none.png', defineValue: '' },
-                    { key: 'V19',  value: 'V1.9.00 to V1.9.05', image: '/images/none.png', defineValue: '' },
-                    { key: 'V196', value: 'V1.9.06 and later', image: '/images/none.png', defineValue: '' }
+                    { key: 'V19',  value: 'V1.9.00 to V1.9.06', image: '/images/none.png', defineValue: '' },
+                    { key: 'V197', value: 'V1.9.07 and later', image: '/images/none.png', defineValue: '' }
                 ]
             },
         },
@@ -167,7 +175,6 @@ const WizardStep = (props) => {
                     { key: 'N', value: 'Northern Hemisphere', image: '/images/north.png', defineValue: '1' },
                     { key: 'S', value: 'Southern Hemisphere', image: '/images/south.png', defineValue: '0' }]
             },
-            //control: { type: 'combo', choices: [{key:'N', value:'Northern Hemisphere'}, {key:'S', value:'Southern Hemisphere'}] },
         },
         {
             title: 'Board',
@@ -222,7 +229,7 @@ const WizardStep = (props) => {
             title: 'RA Advanced Settings',
             label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the RA stepper specs and desired settings:',
             variable: 'rapower',
-            conditions: [{ variable: 'fwversion', neededKeys: 'V19,V196' }, { variable: 'radrv', neededKeys: 'T9U' }],
+            conditions: [{ variable: 'fwversion', neededKeys: 'V19,V197' }, { variable: 'radrv', neededKeys: 'T9U' }],
             preamble: ['// Define some RA stepper motor settings'],
             define: '',
             control: {
@@ -308,7 +315,7 @@ const WizardStep = (props) => {
             title: 'DEC Advanced Settings',
             label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the DEC stepper specs and desired settings:',
             variable: 'decpower',
-            conditions: [{ variable: 'fwversion', neededKeys: 'V19,V196' }, { variable: 'decdrv', neededKeys: 'T9U' }],
+            conditions: [{ variable: 'fwversion', neededKeys: 'V19,V197' }, { variable: 'decdrv', neededKeys: 'T9U' }],
             preamble: ['// Define some DEC stepper motor settings'],
             define: '',
             control: {
@@ -490,7 +497,9 @@ const WizardStep = (props) => {
                 ]
             },
         },
-        {
+
+        //  V1.9.06 and lower begins //////////////////////////////////////
+        {  
             title: 'Auto Polar Align',
             label: 'Do you have the AutoPA add on:',
             variable: 'autopa',
@@ -505,43 +514,11 @@ const WizardStep = (props) => {
                 ]
             },
         },
-        {
-            title: 'Auto Polar Align',
-            label: 'Do you have the AutoPA add on:',
-            variable: 'autopan',
-            conditions: [{ variable: 'fwversion', neededKeys: 'V196' }],
-            preamble: ['////////////////////////////////', '// AutoPA Addon configuration ', '// Define whether we have the AutoPA add on or not. Currently: {v}'],
-            define: '',
-            control: {
-                type: 'radioimg',
-                choices: [
-                    { key: 'N', value: 'No AutoPA', image: '/images/none.png', additionalLines: ['#define AZIMUTH_MOTOR 0', '#define ALTITUDE_MOTOR 0'] },
-                    { key: 'ALT', value: 'Altitude motor only', image: '/images/autopa.png', additionalLines: ['#define AZIMUTH_MOTOR 0', '#define ALTITUDE_MOTOR 1'] },
-                    { key: 'AZ', value: 'Azimuth motor only', image: '/images/autopa.png', additionalLines: ['#define AZIMUTH_MOTOR 1', '#define ALTITUDE_MOTOR 0']},
-                    { key: 'ALTAZ', value: 'Full AutoPA is installed', image: '/images/autopa.png', additionalLines: ['#define AZIMUTH_MOTOR 1', '#define ALTITUDE_MOTOR 1'] },
-                ]
-            },
-        },
-        {
+        { 
             title: 'Azimuth Stepper',
             label: 'Which stepper motor are you using for the Azimuth:',
             variable: 'az',
             conditions: [{ variable: 'autopa', neededKeys: 'Y' }],
-            preamble: ['// Using the {v} stepper for AZ'],
-            define: 'AZ_STEPPER_TYPE',
-            control: {
-                type: 'radioimg',
-                choices: [
-                    { key: 'B', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48', additionalLines: ['#define AZ_DRIVER_TYPE DRIVER_TYPE_ULN2003'] },
-                    { key: 'N', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
-                ]
-            },
-        },
-        {
-            title: 'Azimuth Stepper',
-            label: 'Which stepper motor are you using for the Azimuth:',
-            variable: 'az',
-            conditions: [{ variable: 'autopan', neededKeys: 'AZ,ALTAZ' }],
             preamble: ['// Using the {v} stepper for AZ'],
             define: 'AZ_STEPPER_TYPE',
             control: {
@@ -573,7 +550,7 @@ const WizardStep = (props) => {
             title: 'Azimuth Advanced Settings',
             label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the AZ stepper specs and desired settings:',
             variable: 'azpower',
-            conditions: [{ variable: 'fwversion', neededKeys: 'V19,V196' }, { variable: 'azdrv', neededKeys: 'T9U' }],
+            conditions: [{ variable: 'fwversion', neededKeys: 'V19,V197' }, { variable: 'azdrv', neededKeys: 'T9U' }],
             preamble: ['// Define AZ stepper motor power settings'],
             define: '',
             control: {
@@ -589,21 +566,6 @@ const WizardStep = (props) => {
             label: 'Which stepper motor are you using for the Altitude:',
             variable: 'alt',
             conditions: [{ variable: 'autopa', neededKeys: 'Y' }],
-            preamble: ['// Using the {v} stepper for ALT'],
-            define: 'ALT_STEPPER_TYPE',
-            control: {
-                type: 'radioimg',
-                choices: [
-                    { key: 'B', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48', additionalLines: ['#define ALT_DRIVER_TYPE DRIVER_TYPE_ULN2003'] },
-                    { key: 'N', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
-                ]
-            },
-        },
-        {
-            title: 'Altitude Stepper',
-            label: 'Which stepper motor are you using for the Altitude:',
-            variable: 'alt',
-            conditions: [{ variable: 'autopan', neededKeys: 'ALT,ALTAZ' }],
             preamble: ['// Using the {v} stepper for ALT'],
             define: 'ALT_STEPPER_TYPE',
             control: {
@@ -635,7 +597,7 @@ const WizardStep = (props) => {
             title: 'Altitude Advanced Settings',
             label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the ALT stepper specs and desired settings:',
             variable: 'altpower',
-            conditions: [{ variable: 'fwversion', neededKeys: 'V19,V196' }, { variable: 'altdrv', neededKeys: 'T9U' }],
+            conditions: [{ variable: 'fwversion', neededKeys: 'V19,V197' }, { variable: 'altdrv', neededKeys: 'T9U' }],
             preamble: ['// Define ALT stepper motor power settings'],
             define: '',
             control: {
@@ -646,6 +608,121 @@ const WizardStep = (props) => {
                 ]
             },
         },
+        // V1.9.06 and lower ends //////////////////////////////////////
+
+        // V1.9.07 and later begins //////////////////////////////////////
+        {   
+            title: 'Auto Polar Align',
+            label: 'Do you have the AutoPA add on:',
+            variable: 'autopa907',
+            conditions: [{ variable: 'fwversion', neededKeys: 'V197' }],
+            preamble: ['////////////////////////////////', '// AutoPA Addon configuration ', '// Define whether we have the AutoPA add on or not. Currently: {v}'],
+            define: '',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'N', value: 'No AutoPA', image: '/images/none.png', additionalLines: ['// No AutoPA settings'] },
+                    { key: 'ALT', value: 'Altitude stepper only', image: '/images/autopa_alt.png' },
+                    { key: 'AZ', value: 'Azimuth stepper only', image: '/images/autopa_az.png' },
+                    { key: 'ALTAZ', value: 'Full AutoPA is installed', image: '/images/autopa.png' },
+                ]
+            },
+        },
+        {
+            title: 'Azimuth Stepper',
+            label: 'Which stepper motor are you using for the Azimuth:',
+            variable: 'az907',
+            conditions: [{ variable: 'autopa907', neededKeys: 'AZ,ALTAZ' }],
+            preamble: ['// Using the {v} stepper for AZ'],
+            define: 'AZ_STEPPER_TYPE',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'B', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48', additionalLines: ['#define AZ_DRIVER_TYPE DRIVER_TYPE_ULN2003'] },
+                    { key: 'N', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
+                ]
+            },
+        },
+        {
+            title: 'Azimuth Driver',
+            label: 'Which driver board are you using to drive the Azimuth stepper motor:',
+            variable: 'azdrv907',
+            conditions: [{ variable: 'azv907', neededKeys: 'N' }],
+            preamble: ['// Using the {v} driver for AZ stepper motor'],
+            define: 'AZ_DRIVER_TYPE',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'U', value: 'ULN2003', image: '/images/uln2003.png', defineValue: 'DRIVER_TYPE_ULN2003' },
+                    { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
+                    { key: 'T9U', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
+                    { key: 'T9S', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
+                ]
+            },
+        },
+        {
+            title: 'Azimuth Advanced Settings',
+            label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the AZ stepper specs and desired settings:',
+            variable: 'azpower907',
+            conditions: [{ variable: 'fwversion', neededKeys: 'V19,V197' }, { variable: 'azdrv907', neededKeys: 'T9U' }],
+            preamble: ['// Define AZ stepper motor power settings'],
+            define: '',
+            control: {
+                type: 'textinput',
+                choices: [
+                    { key: 'P', label: 'Power rating in mA', defaultValue: 900, defineLine: '#define AZ_MOTOR_CURRENT_RATING      {0} // mA' },
+                    { key: 'O', label: 'Operating percentage', defaultValue: 80, defineLine: '#define AZ_OPERATING_CURRENT_SETTING {0} // %' },
+                ]
+            },
+        },
+        {
+            title: 'Altitude Stepper',
+            label: 'Which stepper motor are you using for the Altitude:',
+            variable: 'alt907',
+            conditions: [{ variable: 'autopa907', neededKeys: 'ALT,ALTAZ' }],
+            preamble: ['// Using the {v} stepper for ALT'],
+            define: 'ALT_STEPPER_TYPE',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'B', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48', additionalLines: ['#define ALT_DRIVER_TYPE DRIVER_TYPE_ULN2003'] },
+                    { key: 'N', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
+                ]
+            },
+        },
+        {
+            title: 'Altitude Driver',
+            label: 'Which driver board are you using to drive the Altitude stepper motor:',
+            variable: 'altdrv907',
+            conditions: [{ variable: 'alt907', neededKeys: 'N' }],
+            preamble: ['// Using the {v} driver for ALT stepper motor'],
+            define: 'ALT_DRIVER_TYPE',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'U', value: 'ULN2003', image: '/images/uln2003.png', defineValue: 'DRIVER_TYPE_ULN2003' },
+                    { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
+                    { key: 'T9U', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
+                    { key: 'T9S', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
+                ]
+            },
+        },
+        {
+            title: 'Altitude Advanced Settings',
+            label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the ALT stepper specs and desired settings:',
+            variable: 'altpower907',
+            conditions: [{ variable: 'fwversion', neededKeys: 'V19,V197' }, { variable: 'altdrv907', neededKeys: 'T9U' }],
+            preamble: ['// Define ALT stepper motor power settings'],
+            define: '',
+            control: {
+                type: 'textinput',
+                choices: [
+                    { key: 'P', label: 'Power rating in mA', defaultValue: 900, defineLine: '#define ALT_MOTOR_CURRENT_RATING      {0} // mA' },
+                    { key: 'O', label: 'Operating percentage', defaultValue: 80, defineLine: '#define ALT_OPERATING_CURRENT_SETTING {0} // %' },
+                ]
+            },
+        },
+        // V1.9.07 and later ends //////////////////////////////////////
     ];
 
     if (stepIndex < 0) {

@@ -74,7 +74,7 @@ body {
 
 .intro-header {
   color: #ffffff;
-  font-size: 80px;
+  font-size: 60px;
   animation: fadeIn ease 5s;
   -webkit-animation: fadeIn ease 5s;
 }
