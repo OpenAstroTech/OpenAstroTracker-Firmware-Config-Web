@@ -107,9 +107,9 @@ const WizardStep = (props) => {
     const shouldSkipStep = (index) => {
         let startIndex = index;
         let skip = true;
-        if (index < stepProps.length){
-            console.log(`Should we skip step ${index}: ${stepProps[index].variable}?`)
-        }
+        // if (index < stepProps.length){
+        //     console.log(`Should we skip step ${index}: ${stepProps[index].variable}?`)
+        // }
         while (index < stepProps.length) {
             skip = false;
             let nextStep = stepProps[index];
@@ -147,7 +147,7 @@ const WizardStep = (props) => {
             }
         }
 
-        console.log("Should we skip : " + (startIndex !== index))
+        // console.log("Should we skip : " + (startIndex !== index))
 
         return { atEnd: index >= stepProps.length, skip: startIndex !== index, nextIndex: index };
     }
