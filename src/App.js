@@ -16,7 +16,7 @@ function App() {
 
     <Router>
       <Switch>
-        <Route path="/steps">
+      <Route path="/steps">
           <WizardStep />
         </Route>
         <Route path="/">
