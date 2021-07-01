@@ -12,15 +12,12 @@ import {
 
 import { parseExpression } from './parser.js'
 
-// TODO: Support full expressions. 
-// For example:
-// ($fwversion IN [V19, V197]) AND ($azdrv907 EQ TMC2209U)
-// ($fwversion IN [V19, V197]) AND ($azdrv907 EQ TMC2209U) OR (${azdrv} EQ TMC2209U))
-// Needed operators : EQ, NEQ, IN, NOTIN
-// $ denotes variable
-// Parentheses nest
-
 const { Step } = Steps;
+
+const Defaults = {
+    PowerRating: { BYJMOD: 300, NEMA: 900 },
+    PowerUtilization: { BYJMOD: 100, NEMA: 80 },
+}
 
 const WizardStep = (props) => {
     const [stepIndex, setStepIndex] = useState(-1);
@@ -35,6 +32,21 @@ const WizardStep = (props) => {
         setShowResult(false);
     };
 
+    const getDefaultValue = (val) => {
+        if (typeof val === 'string') {
+            if (val.startsWith('{') && val.endsWith('}')) {
+                const words = val.substr(1, val.length - 2).split('.');
+                const config = configuration.find(v => v.variable === words[2])
+                if (config) {
+                    if (words[0] === 'Defaults') {
+                        const lookup = Defaults[words[1]][config.value]
+                        return lookup;
+                    }
+                }
+            }
+        }
+        return val
+    }
     const evaluateLiteral = (expr) => {
         const variable = (expr.lhs.startsWith('$') ? expr.lhs.substr(1) : expr.lhs)
         const conf = configuration.find(config => config.variable === variable);
@@ -194,7 +206,7 @@ const WizardStep = (props) => {
             if (!currentConfig) {
                 // It is not, so create it with default values
                 let prop = stepProps[index];
-                let newConfig = prop.control.choices.map((v) => { return { key: v.key, value: v.defaultValue || '' } });
+                let newConfig = prop.control.choices.map((v) => { return { key: v.key, value: getDefaultValue(v.defaultValue) || '' } });
                 let newConfiguration = configuration.filter(config => config.variable !== stepProps[index].variable);
                 newConfiguration = [...newConfiguration, { variable: prop.variable, value: newConfig }]
                 setConfiguration(newConfiguration);
@@ -740,8 +752,8 @@ const WizardStep = (props) => {
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'BYJ', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48' , additionalLines: ['#define AZ_DRIVER_TYPE DRIVER_TYPE_ULN2003']  },
-                    { key: 'BYJMOD', value: '28BYJ-48 (Bipolar)', image: '/images/byj48mod.png', defineValue: 'STEPPER_TYPE_28BYJ48'},
+                    { key: 'BYJ', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48', additionalLines: ['#define AZ_DRIVER_TYPE DRIVER_TYPE_ULN2003'] },
+                    { key: 'BYJMOD', value: '28BYJ-48 (Bipolar)', image: '/images/byj48mod.png', defineValue: 'STEPPER_TYPE_28BYJ48' },
                     { key: 'NEMA', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
                 ]
             },
@@ -772,8 +784,8 @@ const WizardStep = (props) => {
             control: {
                 type: 'textinput',
                 choices: [
-                    { key: 'P', label: 'Power rating in mA', defaultValue: 900, defineLine: '#define AZ_MOTOR_CURRENT_RATING      {0} // mA' },
-                    { key: 'O', label: 'Operating percentage', defaultValue: 80, defineLine: '#define AZ_OPERATING_CURRENT_SETTING {0} // %' },
+                    { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.az907}', defineLine: '#define AZ_MOTOR_CURRENT_RATING      {0} // mA' },
+                    { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.az907}', defineLine: '#define AZ_OPERATING_CURRENT_SETTING {0} // %' },
                 ]
             },
         },
@@ -819,8 +831,8 @@ const WizardStep = (props) => {
             control: {
                 type: 'textinput',
                 choices: [
-                    { key: 'P', label: 'Power rating in mA', defaultValue: 900, defineLine: '#define ALT_MOTOR_CURRENT_RATING      {0} // mA' },
-                    { key: 'O', label: 'Operating percentage', defaultValue: 80, defineLine: '#define ALT_OPERATING_CURRENT_SETTING {0} // %' },
+                    { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.alt907}', defineLine: '#define ALT_MOTOR_CURRENT_RATING      {0} // mA' },
+                    { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.alt907}', defineLine: '#define ALT_OPERATING_CURRENT_SETTING {0} // %' },
                 ]
             },
         },
@@ -853,7 +865,7 @@ const WizardStep = (props) => {
                 type: 'radioimg',
                 choices: [
                     { key: 'BYJ', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48', additionalLines: ['#define FOCUS_DRIVER_TYPE  DRIVER_TYPE_ULN2003'] },
-                    { key: 'NEMA17', value: 'NEMA 17 w/ TMC2209 UART', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define FOCUS_DRIVER_TYPE  DRIVER_TYPE_TMC2209_UART'] },
+                    { key: 'NEMA', value: 'NEMA 17 w/ TMC2209 UART', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define FOCUS_DRIVER_TYPE  DRIVER_TYPE_TMC2209_UART'] },
                 ]
             },
         },
@@ -861,7 +873,7 @@ const WizardStep = (props) => {
             title: 'Focuser Advanced Settings',
             label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the Focus stepper specs and desired settings:',
             variable: 'focuspower',
-            condition: "$focusmotor == NEMA17",
+            condition: "$focusmotor == NEMA",
             preamble: ['// Define Focus stepper motor power settings'],
             define: '',
             control: {
@@ -922,7 +934,7 @@ const WizardStep = (props) => {
                 }
                 property.control.choices.forEach(choice => {
                     let configVal = config.value.find(cfgval => cfgval.key === choice.key);
-                    let val = (configVal ? configVal.value : null) || choice.defaultValue || '';
+                    let val = (configVal ? configVal.value : null) || getDefaultValue(choice.defaultValue) || '';
                     defineLine = choice.defineLine.replace('{0}', val);
                     defines = [...defines, defineLine];
                     if (choice.additionalLines) {
@@ -1006,9 +1018,9 @@ const WizardStep = (props) => {
 
             case 'textinput':
                 control = <>
-                    { stepControl.choices.map(input =>
+                    {stepControl.choices.map(input =>
                         <div style={{ marginBottom: '10pt' }}>
-                            <Input addonBefore={input.label} placeholder={input.label} defaultValue={input.defaultValue} onChange={(e) => onChangedText(stepIndex, input.key, e.target.value)} />
+                            <Input addonBefore={input.label} placeholder={input.label} defaultValue={getDefaultValue(input.defaultValue)} onChange={(e) => onChangedText(stepIndex, input.key, e.target.value)} />
                         </div>
                     )}
                     <div className='back-button' >
