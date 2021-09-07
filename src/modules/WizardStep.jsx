@@ -849,7 +849,7 @@ const WizardStep = (props) => {
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'N', value: 'No Focuser', image: '/images/none.png', additionalLines: ['// No AutoPA settings'] },
+                    { key: 'N', value: 'No Focuser', image: '/images/none.png', additionalLines: ['// No Focuser settings'] },
                     { key: 'Y', value: 'Focuser stepper', image: '/images/none.png' },
                 ]
             },
