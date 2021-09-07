@@ -297,7 +297,7 @@ const WizardStep = (props) => {
             title: 'RA Stepper',
             label: 'Which stepper motor are you using for RA:',
             variable: 'rastpr',
-            preamble: ['////////////////////////////////', '// RA Stepper configuration ', ' // See supported stepper values. Change according to the steppers you are using', '// Using the {v} stepper for RA'],
+            preamble: ['////////////////////////////////', '// RA Stepper configuration ', '// See supported stepper values. Change according to the steppers you are using', '// Using the {v} stepper for RA'],
             define: 'RA_STEPPER_TYPE',
             control: {
                 type: 'radioimg',
@@ -343,7 +343,7 @@ const WizardStep = (props) => {
                     {
                         key: 'T', label: 'Microstepping while tracking', defaultValue: 64, defineLine: '#define RA_TRACKING_MICROSTEPPING {0}',
                         additionalLines: [
-                            ' // TMC2209 Stealth Mode (spreadCycle) - When set to 0, tracking is more precise, but noisy (high-pitched sound). When set to 1, they are silent.',
+                            '// TMC2209 Stealth Mode (spreadCycle) - When set to 0, tracking is more precise, but noisy (high-pitched sound). When set to 1, they are silent.',
                             '#define RA_UART_STEALTH_MODE     0'
                         ]
                     },
@@ -383,7 +383,7 @@ const WizardStep = (props) => {
             title: 'DEC Stepper',
             label: 'Which stepper motor are you using for DEC:',
             variable: 'decstpr',
-            preamble: ['////////////////////////////////', '// DEC Stepper configuration ', ' // See supported stepper values. Change according to the steppers you are using', '// Using the {v} stepper for DEC'],
+            preamble: ['////////////////////////////////', '// DEC Stepper configuration ', '// See supported stepper values. Change according to the steppers you are using', '// Using the {v} stepper for DEC'],
             define: 'DEC_STEPPER_TYPE',
             control: {
                 type: 'radioimg',
@@ -431,7 +431,7 @@ const WizardStep = (props) => {
                     {
                         key: 'T', label: 'Microstepping while tracking', defaultValue: 64, defineLine: '#define DEC_GUIDE_MICROSTEPPING {0}',
                         additionalLines: [
-                            ' // TMC2209 Stealth Mode (spreadCycle) - When set to 0, tracking is more precise, but noisy (high-pitched sound). When set to 1, they are silent.',
+                            '// TMC2209 Stealth Mode (spreadCycle) - When set to 0, tracking is more precise, but noisy (high-pitched sound). When set to 1, they are silent.',
                             '#define DEC_UART_STEALTH_MODE     0'
                         ]
                     },
@@ -849,7 +849,7 @@ const WizardStep = (props) => {
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'N', value: 'No Focuser', image: '/images/none.png', additionalLines: ['// No AutoPA settings'] },
+                    { key: 'N', value: 'No Focuser', image: '/images/none.png', additionalLines: ['// No Focuser settings'] },
                     { key: 'Y', value: 'Focuser stepper', image: '/images/none.png' },
                 ]
             },
