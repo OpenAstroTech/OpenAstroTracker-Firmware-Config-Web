@@ -259,7 +259,7 @@ const WizardStep = (props) => {
                     { key: 'V19', value: 'V1.9.00 to V1.9.06', image: '/images/none.png', defineValue: '' },
                     { key: 'V197', value: 'V1.9.07 to V1.9.10', image: '/images/none.png', defineValue: '' },
                     { key: 'V1911', value: 'V1.9.11 to V1.9.14', image: '/images/none.png', defineValue: '' },
-                    { key: 'V1915', value: 'V1.9.15 and V1.9.29', image: '/images/none.png', defineValue: '' },
+                    { key: 'V1915', value: 'V1.9.15 to V1.9.29', image: '/images/none.png', defineValue: '' },
                     { key: 'V1930', value: 'V1.9.30 and later', image: '/images/none.png', defineValue: '' },
                 ]
             },
