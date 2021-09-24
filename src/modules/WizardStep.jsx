@@ -844,7 +844,7 @@ const WizardStep = (props) => {
             title: 'Focuser support',
             label: 'Do you want to support a focuser on E1:',
             variable: 'focuser',
-            condition: "($fwversion IN [V1911,V1915]) AND ($board == MKSV21)",
+            condition: "($fwversion IN [V1911,V1915,V1930]) AND ($board == MKSV21)",
             preamble: ['////////////////////////////////', '// Focuser configuration ', '// Define whether to support a focusing stepper motor on E1 or not. Currently: {v}'],
             define: '',
             control: {
