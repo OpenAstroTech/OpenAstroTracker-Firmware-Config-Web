@@ -874,7 +874,7 @@ const WizardStep = (props) => {
             title: 'Focuser Advanced Settings',
             label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the Focus stepper specs and desired settings:',
             variable: 'focuspower',
-            condition: "$focusmotor == NEMA",
+            condition: "$focusmotor == N1709",
             preamble: ['// Define Focus stepper motor power settings'],
             define: '',
             control: {
