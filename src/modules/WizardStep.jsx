@@ -866,7 +866,8 @@ const WizardStep = (props) => {
                 type: 'radioimg',
                 choices: [
                     { key: 'BYJ', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48', additionalLines: ['#define FOCUS_DRIVER_TYPE  DRIVER_TYPE_ULN2003'] },
-                    { key: 'N1709', value: 'NEMA 17 w/ TMC2209 UART', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define FOCUS_DRIVER_TYPE  DRIVER_TYPE_TMC2209_UART'] },
+                    { key: 'N1709', value: 'NEMA 17, 0.9°/step w/ TMC2209 UART', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define FOCUS_DRIVER_TYPE  DRIVER_TYPE_TMC2209_UART', '#define FOCUS_STEPPER_SPR               400 // steps/rev', ] },
+                    { key: 'N1718', value: 'NEMA 17, 1.8°/step w/ TMC2209 UART', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define FOCUS_DRIVER_TYPE  DRIVER_TYPE_TMC2209_UART', '#define FOCUS_STEPPER_SPR               200 // steps/rev', ] },
                 ]
             },
         },
@@ -874,17 +875,18 @@ const WizardStep = (props) => {
             title: 'Focuser Advanced Settings',
             label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the Focus stepper specs and desired settings:',
             variable: 'focuspower',
-            condition: "$focusmotor == N1709",
+            condition: "$focusmotor IN [N1709,N1718]",
             preamble: ['// Define Focus stepper motor power settings'],
             define: '',
             control: {
                 type: 'textinput',
                 choices: [
-                    { key: 'P', label: 'Power rating in mA', defaultValue: 900, defineLine: '#define FOCUS_MOTOR_CURRENT_RATING      {0} // mA', additionalLines: ['#define FOCUS_STEPPER_SPR               400 // steps/rev', '#define FOCUS_UART_STEALTH_MODE          1 // silent?'] },
+                    { key: 'P', label: 'Power rating in mA', defaultValue: 900, defineLine: '#define FOCUS_MOTOR_CURRENT_RATING      {0} // mA' },
                     { key: 'O', label: 'Operating percentage', defaultValue: 80, defineLine: '#define FOCUS_OPERATING_CURRENT_SETTING {0} // %' },
-                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 3000, defineLine: '#define FOCUS_STEPPER_ACCELERATION      {0} // steps/s/s' },
-                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: 1500, defineLine: '#define FOCUS_STEPPER_SPEED             {0} // steps/s' },
-                    { key: 'S', label: 'Microstepping while slewing', defaultValue: 16, defineLine: '#define FOCUS_MICROSTEPPING             {0} // steps' },
+                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 4000, defineLine: '#define FOCUS_STEPPER_ACCELERATION      {0} // steps/s/s' },
+                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: 1500, defineLine: '#define FOCUS_STEPPER_SPEED             {0} // steps/s', additionalLines: ['#define FOCUS_UART_STEALTH_MODE          1 // silent?']  },
+                    { key: 'S', label: 'Microstepping setting', defaultValue: 16, defineLine: '#define FOCUS_MICROSTEPPING             {0} // steps' },
+                    { key: 'H', label: 'Hold current percentage (0 to power down)', defaultValue: 10, defineLine: '#FOCUSER_MOTOR_HOLD_SETTING             {0} // %' },
                 ]
             },
         },
