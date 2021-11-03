@@ -886,7 +886,7 @@ const WizardStep = (props) => {
                     { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 4000, defineLine: '#define FOCUS_STEPPER_ACCELERATION      {0} // steps/s/s' },
                     { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: 1500, defineLine: '#define FOCUS_STEPPER_SPEED             {0} // steps/s', additionalLines: ['#define FOCUS_UART_STEALTH_MODE          1 // silent?']  },
                     { key: 'S', label: 'Microstepping setting', defaultValue: 16, defineLine: '#define FOCUS_MICROSTEPPING             {0} // steps' },
-                    { key: 'H', label: 'Hold current percentage (0 to power down)', defaultValue: 10, defineLine: '#FOCUSER_MOTOR_HOLD_SETTING             {0} // %' },
+                    { key: 'H', label: 'Hold current percentage (0 to power down)', defaultValue: 10, defineLine: '#define FOCUSER_MOTOR_HOLD_SETTING             {0} // %' },
                 ]
             },
         },
