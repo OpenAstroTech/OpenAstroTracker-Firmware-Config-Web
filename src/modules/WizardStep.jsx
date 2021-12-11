@@ -15,8 +15,9 @@ import { parseExpression } from './parser.js'
 const { Step } = Steps;
 
 const Defaults = {
-    PowerRating: { BYJMOD: 300, N1709: 900, N1718: 900 },
-    PowerUtilization: { BYJMOD: 100, N1709: 80, N1718: 80 },
+    PowerRating: { BM: 300, N9: 900, N8: 900 },
+    PowerUtilization: { BM: 100, N9: 90, N8: 90 },
+    HoldPercentage: { BM: 0, N9: 10, N8: 10 },
 }
 
 const WizardStep = (props) => {
@@ -24,10 +25,12 @@ const WizardStep = (props) => {
     const [showResult, setShowResult] = useState(false);
     const [configuration, setConfiguration] = useState([]);
     const [advanceStep, setAdvanceStep] = useState(false);
+    const [stepHistory, setStepHistory] = useState([]);
     const downloadParentRef = useRef(null);
 
     const onRestart = () => {
         setConfiguration([]);
+        setStepHistory([]);
         setStepIndex(0);
         setShowResult(false);
     };
@@ -47,6 +50,7 @@ const WizardStep = (props) => {
         }
         return val
     }
+
     const evaluateLiteral = (expr) => {
         const variable = (expr.lhs.startsWith('$') ? expr.lhs.substr(1) : expr.lhs)
         const conf = configuration.find(config => config.variable === variable);
@@ -166,6 +170,10 @@ const WizardStep = (props) => {
 
     useEffect(() => {
         let nextStepIndex = stepIndex + 1;
+        const newStepHistory = [...stepHistory, stepIndex];
+        setStepHistory(newStepHistory);
+        console.log("history:", newStepHistory);
+
         let res = shouldSkipStep(nextStepIndex);
         setStepIndex(res.nextIndex);
 
@@ -174,14 +182,39 @@ const WizardStep = (props) => {
         }
     }, [advanceStep]);
 
+    const goBackInHistory = () => {
+        const newStepIndex = stepHistory[stepHistory.length - 1];
+        const newStepHistory = stepHistory.slice(0, -1);
+        setStepHistory(newStepHistory);
+        setStepIndex(newStepIndex);
+    }
+
+    const download = (filename, lines) => {
+        const text = [...(lines.map(line => line + "\n"))]
+        var textLines = text.join("")
+        textLines = encodeURIComponent(textLines)
+
+        var element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + textLines);
+        element.setAttribute('download', filename);
+
+        element.style.display = 'none';
+        document.body.appendChild(element);
+
+        element.click();
+
+        document.body.removeChild(element);
+    }
+
     const downloadTxtFile = (lines) => {
+
         const element = document.createElement("a");
         const file = new Blob([...(lines.map(line => line + "\n"))], { type: 'text/plain;charset=utf-8' });
         element.setAttribute('href', window.URL.createObjectURL(file));
 
         element.target = "_blank";
         element.rel = "noreferrer noopener";
-        //element.download = "Configuration_local.hpp";
+        // element.download = "Configuration_local.hpp";
         downloadParentRef.current.appendChild(element);
         setTimeout(function () {
             element.click();
@@ -243,6 +276,7 @@ const WizardStep = (props) => {
 
     const stepProps = [
         {
+            id: 'FW',
             title: 'Firmware',
             label: 'Which firmware version are you planning to configure/build:',
             variable: 'fwversion',
@@ -255,16 +289,14 @@ const WizardStep = (props) => {
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'V18', value: 'V1.8.77 and earlier', image: '/images/none.png', defineValue: '' },
-                    { key: 'V19', value: 'V1.9.00 to V1.9.06', image: '/images/none.png', defineValue: '' },
-                    { key: 'V197', value: 'V1.9.07 to V1.9.10', image: '/images/none.png', defineValue: '' },
-                    { key: 'V1911', value: 'V1.9.11 to V1.9.14', image: '/images/none.png', defineValue: '' },
-                    { key: 'V1915', value: 'V1.9.15 to V1.9.29', image: '/images/none.png', defineValue: '' },
-                    { key: 'V1930', value: 'V1.9.30 and later', image: '/images/none.png', defineValue: '' },
+                    { key: 'O', value: 'Latest Official (V1.10.0)', image: '/images/none.png', defineValue: '' },
+                    //{ key: 'B', value: 'Last Official to support 28NYJ-48 (V1.9.30)', image: '/images/none.png', defineValue: '' },
+                    //{ key: 'D', value: 'Latest Develop (V1.10.3x)', image: '/images/none.png', defineValue: '' },
                 ]
             },
         },
         {
+            id: 'HS',
             title: 'Hemisphere',
             label: 'Which hemisphere do you live in:',
             variable: 'hemi',
@@ -273,11 +305,12 @@ const WizardStep = (props) => {
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'NORTH', value: 'Northern Hemisphere', image: '/images/north.png', defineValue: '1' },
-                    { key: 'SOUTH', value: 'Southern Hemisphere', image: '/images/south.png', defineValue: '0' }]
+                    { key: 'N', value: 'Northern Hemisphere', image: '/images/north.png', defineValue: '1' },
+                    { key: 'S', value: 'Southern Hemisphere', image: '/images/south.png', defineValue: '0' }]
             },
         },
         {
+            id: 'BD',
             title: 'Board',
             label: 'Which microcontroller board are you using:',
             variable: 'board',
@@ -286,15 +319,16 @@ const WizardStep = (props) => {
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'MEGA', value: 'ATMega 2560 (or clone)', image: '/images/mega2560.png', defineValue: 'BOARD_AVR_MEGA2560' },
-                    { key: 'ESP', value: 'ESP32', image: '/images/esp32.png', defineValue: 'BOARD_ESP32_ESP32DEV' },
-                    { key: 'MKSV10', value: 'MKS GEN L V1.0', image: '/images/mksv10.png', defineValue: 'BOARD_AVR_MKS_GEN_L_V1' },
-                    { key: 'MKSV20', value: 'MKS GEN L V2.0', image: '/images/mksv20.png', defineValue: 'BOARD_AVR_MKS_GEN_L_V2' },
-                    { key: 'MKSV21', value: 'MKS GEN L V2.1', image: '/images/mksv21.png', defineValue: 'BOARD_AVR_MKS_GEN_L_V21' },
+                    { key: 'M', value: 'ATMega 2560 (or clone)', image: '/images/mega2560.png', defineValue: 'BOARD_AVR_MEGA2560' },
+                    { key: 'E', value: 'ESP32', image: '/images/esp32.png', defineValue: 'BOARD_ESP32_ESP32DEV' },
+                    { key: 'M10', value: 'MKS GEN L V1.0', image: '/images/mksv10.png', defineValue: 'BOARD_AVR_MKS_GEN_L_V1' },
+                    { key: 'M20', value: 'MKS GEN L V2.0', image: '/images/mksv20.png', defineValue: 'BOARD_AVR_MKS_GEN_L_V2' },
+                    { key: 'M21', value: 'MKS GEN L V2.1', image: '/images/mksv21.png', defineValue: 'BOARD_AVR_MKS_GEN_L_V21' },
                 ]
             },
         },
         {
+            id: 'RS',
             title: 'RA Stepper',
             label: 'Which stepper motor are you using for RA:',
             variable: 'rastpr',
@@ -303,70 +337,61 @@ const WizardStep = (props) => {
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'BYJ', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48', additionalLines: ['#define RA_DRIVER_TYPE DRIVER_TYPE_ULN2003'] },
-                    { key: 'N1709', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
-                    { key: 'N1718', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define RA_STEPPER_SPR 200'] },
+                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define RA_STEPPER_SPR               4096 // steps/rev',] },
+                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
+                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define RA_STEPPER_SPR 200'] },
                 ]
             },
         },
         {
+            id: 'RD',
             title: 'RA Driver',
             label: 'Which driver board are you using to drive the RA stepper motor:',
             variable: 'radrv',
-            condition: "$rastpr IN [N1709,N1718]",
+            condition: "$rastpr IN [N9,N8]",
             preamble: ['// Using the {v} driver for RA stepper motor'],
             define: 'RA_DRIVER_TYPE',
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'ULN', value: 'ULN2003', image: '/images/uln2003.png', defineValue: 'DRIVER_TYPE_ULN2003' },
-                    { key: 'A4988', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
-                    { key: 'TMC2209U', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
-                    { key: 'TMC2209S', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
+                    { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
+                    { key: 'TU', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
+                    { key: 'TS', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
                 ]
             },
         },
         {
+            id: 'RA',
             title: 'RA Advanced Settings',
             label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the RA stepper specs and desired settings:',
             variable: 'rapower',
-            condition: "($fwversion IN [V19,V197,V1911,V1915,V1930]) AND ($radrv == TMC2209U)",
+            condition: "$radrv == TU",
             preamble: ['// Define some RA stepper motor settings'],
             define: '',
             control: {
                 type: 'textinput',
                 choices: [
-                    { key: 'P', label: 'Power rating in mA', defaultValue: 900, defineLine: '#define RA_MOTOR_CURRENT_RATING      {0} // mA' },
-                    { key: 'O', label: 'Operating percentage', defaultValue: 80, defineLine: '#define RA_OPERATING_CURRENT_SETTING {0} // %' },
-                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 3000, defineLine: '#define RA_STEPPER_ACCELERATION {0}' },
-                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: 1200, defineLine: '#define RA_STEPPER_SPEED {0}' },
-                    { key: 'S', label: 'Microstepping while slewing', defaultValue: 8, defineLine: '#define RA_SLEW_MICROSTEPPING {0}' },
+                    { key: 'P', label: 'Power rating in mA', defaultValue: 900, defineLine: '#define RA_MOTOR_CURRENT_RATING       {0} // mA' },
+                    { key: 'O', label: 'Operating percentage', defaultValue: 80, defineLine: '#define RA_OPERATING_CURRENT_SETTING  {0} // %' },
+                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 3000, defineLine: '#define RA_STEPPER_ACCELERATION       {0}' },
+                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: 1200, defineLine: '#define RA_STEPPER_SPEED              {0}' },
+                    { key: 'S', label: 'Microstepping while slewing', defaultValue: 8, defineLine: '#define RA_SLEW_MICROSTEPPING         {0}' },
                     {
-                        key: 'T', label: 'Microstepping while tracking', defaultValue: 64, defineLine: '#define RA_TRACKING_MICROSTEPPING {0}',
+                        key: 'T', label: 'Microstepping while tracking', defaultValue: 64, defineLine: '#define RA_TRACKING_MICROSTEPPING     {0}',
                         additionalLines: [
+                            '',
                             '// TMC2209 Stealth Mode (spreadCycle) - When set to 0, tracking is more precise, but noisy (high-pitched sound). When set to 1, they are silent.',
-                            '#define RA_UART_STEALTH_MODE     0'
+                            '#define RA_UART_STEALTH_MODE          0',
+                            '',
+                            '// Is it going the wrong way?',
+                            '#define RA_INVERT_DIR  0'
                         ]
                     },
                 ]
             },
         },
         {
-            title: 'RA Advanced Settings',
-            label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the RA stepper specs and desired settings:',
-            variable: 'rapowerbjy',
-            condition: "($fwversion == V18) AND ($rastpr == BYJ)",
-            preamble: ['// Define some RA stepper motor settings'],
-            define: '',
-            control: {
-                type: 'textinput',
-                choices: [
-                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 600, defineLine: '#define RA_STEPPER_ACCELERATION {0}' },
-                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: 400, defineLine: '#define RA_STEPPER_SPEED {0}' },
-                ]
-            },
-        },
-        {
+            id: 'RT',
             title: 'RA Pulley Teeth',
             label: 'How many teeth does your RA gear have?',
             variable: 'racog',
@@ -381,6 +406,7 @@ const WizardStep = (props) => {
             },
         },
         {
+            id: 'DS',
             title: 'DEC Stepper',
             label: 'Which stepper motor are you using for DEC:',
             variable: 'decstpr',
@@ -389,72 +415,62 @@ const WizardStep = (props) => {
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'BYJ', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48', additionalLines: ['#define DEC_DRIVER_TYPE DRIVER_TYPE_ULN2003'] },
-                    { key: 'N1709', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
-                    { key: 'N1718', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define DEC_STEPPER_SPR 200'] },
-                    { key: 'N1409', value: 'NEMA 14, 0.9°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_NEMA17' },
-                    { key: 'N1418', value: 'NEMA 14, 1.8°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define DEC_STEPPER_SPR 200'] },
+                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define DEC_STEPPER_SPR 4096'] },
+                    { key: 'N79', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
+                    { key: 'N78', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define DEC_STEPPER_SPR 200'] },
+                    { key: 'N49', value: 'NEMA 14, 0.9°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_NEMA17' },
+                    { key: 'N48', value: 'NEMA 14, 1.8°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define DEC_STEPPER_SPR 200'] },
                 ]
             },
         },
         {
+            id: 'DD',
             title: 'DEC Driver',
             label: 'Which driver board are you using to drive the DEC stepper motor:',
             variable: 'decdrv',
-            condition: "$decstpr IN [N1709,N1718,N1409,N1418]",
             preamble: ['// Using the {v} driver for DEC stepper'],
             define: 'DEC_DRIVER_TYPE',
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'ULN', value: 'ULN2003', image: '/images/uln2003.png', defineValue: 'DRIVER_TYPE_ULN2003' },
-                    { key: 'A4988', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
-                    { key: 'TMC2209U', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
-                    { key: 'TMC2209S', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
+                    { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
+                    { key: 'TU', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
+                    { key: 'TS', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
                 ]
             },
         },
         {
+            id: 'DA',
             title: 'DEC Advanced Settings',
             label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the DEC stepper specs and desired settings:',
             variable: 'decpower',
-            condition: "($fwversion IN [V19,V197,V1911,V1915,V1930]) AND ($decdrv == TMC2209U)",
+            condition: "$decdrv == TU",
             preamble: ['// Define some DEC stepper motor settings'],
             define: '',
             control: {
                 type: 'textinput',
                 choices: [
-                    { key: 'P', label: 'Power rating in mA', defaultValue: 900, defineLine: '#define DEC_MOTOR_CURRENT_RATING      {0} // mA' },
-                    { key: 'O', label: 'Operating percentage', defaultValue: 80, defineLine: '#define DEC_OPERATING_CURRENT_SETTING {0} // %' },
-                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 3000, defineLine: '#define DEC_STEPPER_ACCELERATION {0}' },
-                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: 1200, defineLine: '#define DEC_STEPPER_SPEED {0}' },
-                    { key: 'S', label: 'Microstepping while slewing', defaultValue: 16, defineLine: '#define DEC_SLEW_MICROSTEPPING {0}' },
+                    { key: 'P', label: 'Power rating in mA', defaultValue: 900, defineLine: '#define DEC_MOTOR_CURRENT_RATING       {0} // mA' },
+                    { key: 'O', label: 'Operating percentage', defaultValue: 80, defineLine: '#define DEC_OPERATING_CURRENT_SETTING  {0} // %' },
+                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 3000, defineLine: '#define DEC_STEPPER_ACCELERATION       {0}' },
+                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: 1200, defineLine: '#define DEC_STEPPER_SPEED              {0}' },
+                    { key: 'S', label: 'Microstepping while slewing', defaultValue: 16, defineLine: '#define DEC_SLEW_MICROSTEPPING         {0}' },
                     {
-                        key: 'T', label: 'Microstepping while tracking', defaultValue: 64, defineLine: '#define DEC_GUIDE_MICROSTEPPING {0}',
+                        key: 'T', label: 'Microstepping while tracking', defaultValue: 64, defineLine: '#define DEC_GUIDE_MICROSTEPPING        {0}',
                         additionalLines: [
+                            '',
                             '// TMC2209 Stealth Mode (spreadCycle) - When set to 0, tracking is more precise, but noisy (high-pitched sound). When set to 1, they are silent.',
-                            '#define DEC_UART_STEALTH_MODE     0'
+                            '#define DEC_UART_STEALTH_MODE          0',
+                            '',
+                            '// Is it going the wrong way?',
+                            '#define DEC_INVERT_DIR  0'
                         ]
                     },
                 ]
             },
         },
         {
-            title: 'DEC Advanced Settings',
-            label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the DEC stepper specs and desired settings:',
-            variable: 'decpowerbjy',
-            condition: "($fwversion == V18) AND ($decstpr == BYJ)",
-            preamble: ['// Define some DEC stepper motor settings'],
-            define: '',
-            control: {
-                type: 'textinput',
-                choices: [
-                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 600, defineLine: '#define DEC_STEPPER_ACCELERATION {0}' },
-                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: 400, defineLine: '#define DEC_STEPPER_SPEED {0}' },
-                ]
-            },
-        },
-        {
+            id: 'DT',
             title: 'DEC Pulley Teeth',
             label: 'How many teeth does your DEC gear have?',
             variable: 'deccog',
@@ -469,6 +485,7 @@ const WizardStep = (props) => {
             },
         },
         {
+            id: 'DY',
             title: 'Display',
             label: 'What kind of display are you using:',
             variable: 'display',
@@ -477,7 +494,7 @@ const WizardStep = (props) => {
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'NONE', value: 'No display', image: '/images/none.png', defineValue: 'DISPLAY_TYPE_NONE' },
+                    { key: 'NO', value: 'No display', image: '/images/none.png', defineValue: 'DISPLAY_TYPE_NONE' },
                     { key: 'LCD', value: 'LCD Shield w/ keypad', image: '/images/lcdshield.png', defineValue: 'DISPLAY_TYPE_LCD_KEYPAD' },
                     { key: 'I08', value: 'I2C LCD Shield w/ MCP23008 controller', image: '/images/lcd23008.png', defineValue: 'DISPLAY_TYPE_LCD_KEYPAD_I2C_MCP23008' },
                     { key: 'I17', value: 'I2C LCD Shield w/ MCP23017 controller', image: '/images/lcd23017.png', defineValue: 'DISPLAY_TYPE_LCD_KEYPAD_I2C_MCP23017' },
@@ -486,10 +503,11 @@ const WizardStep = (props) => {
             },
         },
         {
+            id: 'WW',
             title: 'Use WiFi',
             label: 'Do you want to enable WiFi:',
             variable: 'wifi',
-            condition: "$board == ESP",
+            condition: "$board == E",
             preamble: ['////////////////////////////////', '// WiFi configuration ', '// Are we using WiFi: {v}'],
             define: 'WIFI_ENABLED',
             control: {
@@ -501,6 +519,7 @@ const WizardStep = (props) => {
             },
         },
         {
+            id: 'WM',
             title: 'WiFi Mode',
             label: 'In what mode do you want to use WiFi:',
             condition: "$wifi == Y",
@@ -510,17 +529,18 @@ const WizardStep = (props) => {
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'INFRA', value: 'Infrastructure, all devices connect to same network', image: '/images/infra.png', defineValue: 'WIFI_MODE_INFRASTRUCTURE' },
-                    { key: 'AP', value: 'Access Point, OAT is a hotspot', image: '/images/ap.png', defineValue: 'WIFI_MODE_AP_ONLY' },
-                    { key: 'FAILOVER', value: 'Infrastructure with failover to Access Point', image: '/images/failover.png', defineValue: 'WIFI_MODE_ATTEMPT_INFRASTRUCTURE_FAIL_TO_AP' },
+                    { key: 'I', value: 'Infrastructure, all devices connect to same network', image: '/images/infra.png', defineValue: 'WIFI_MODE_INFRASTRUCTURE' },
+                    { key: 'A', value: 'Access Point, OAT is a hotspot', image: '/images/ap.png', defineValue: 'WIFI_MODE_AP_ONLY' },
+                    { key: 'F', value: 'Infrastructure with failover to Access Point', image: '/images/failover.png', defineValue: 'WIFI_MODE_ATTEMPT_INFRASTRUCTURE_FAIL_TO_AP' },
                 ]
             },
         },
         {
+            id: 'WI',
             title: 'WiFi Infrastructure Setup',
             label: 'Enter the WiFi parameters for Infrastructure mode:',
             variable: 'wifiparamsi',
-            condition: "($wifi == Y) AND ($wifimode == INFRA)",
+            condition: "($wifi == Y) AND ($wifimode == I)",
             preamble: ['// Define the SSID, WPA key and host name for the network'],
             define: '',
             control: {
@@ -533,10 +553,11 @@ const WizardStep = (props) => {
             },
         },
         {
+            id: 'WA',
             title: 'WiFi Access Point Setup',
             label: 'Enter the WiFi parameters for Access Point mode:',
             variable: 'wifiparamsa',
-            condition: "($wifi == Y) AND ($wifimode == AP)",
+            condition: "($wifi == Y) AND ($wifimode == A)",
             define: '',
             preamble: ['// Define the WPA key and host name for the network'],
             control: {
@@ -548,10 +569,11 @@ const WizardStep = (props) => {
             },
         },
         {
+            id: 'WF',
             title: 'WiFi Failover Setup',
             label: 'Enter the WiFi parameters for Failover mode:',
             variable: 'wifiparamsf',
-            condition: "($wifi == Y) AND ($wifimode == FAILOVER)",
+            condition: "($wifi == Y) AND ($wifimode == F)",
             define: '',
             preamble: ['// Define the SSID, WPA keys and host name for the network'],
             control: {
@@ -565,6 +587,7 @@ const WizardStep = (props) => {
             },
         },
         {
+            id: 'GP',
             title: 'GPS',
             label: 'Do you have the GPS add on:',
             variable: 'gps',
@@ -580,11 +603,12 @@ const WizardStep = (props) => {
         },
         // GYRO for MEGA
         {
+            id: 'DL',
             title: 'Digital Level',
             label: 'Do you have the Digital Level add on:',
             variable: 'gyro',
             preamble: ['////////////////////////////////', '// Digital Level Addon configuration ', '// Define whether we have the Digital Level or not. Currently: {v}'],
-            condition: "($fwversion IN [V1915,V1930]) AND ($board == MEGA)",
+            condition: "$board == M",
             define: 'USE_GYRO_LEVEL',
             control: {
                 type: 'radioimg',
@@ -597,11 +621,12 @@ const WizardStep = (props) => {
         },
         // GYRO for MKS V21
         {
+            id: 'LM',
             title: 'Digital Level',
             label: 'Do you have the Digital Level add on:',
             variable: 'gyromks',
             preamble: ['////////////////////////////////', '// Digital Level Addon configuration ', '// Define whether we have the Digital Level or not. Currently: {v}'],
-            condition: "($fwversion IN [V1915,V1930]) AND ($board == MKSV21)",
+            condition: "$board == M21",
             define: 'USE_GYRO_LEVEL',
             control: {
                 type: 'radioimg',
@@ -613,249 +638,26 @@ const WizardStep = (props) => {
             },
         },
 
-        //  V1.9.06 and lower begins //////////////////////////////////////
-        {
-            title: 'Auto Polar Align',
-            label: 'Do you have the AutoPA add on:',
-            variable: 'autopa',
-            condition: "$fwversion IN [V19,V18]",
-            preamble: ['////////////////////////////////', '// AutoPA Addon configuration ', '// Define whether we have the AutoPA add on or not. Currently: {v}'],
-            define: 'AZIMUTH_ALTITUDE_MOTORS',
-            control: {
-                type: 'radioimg',
-                choices: [
-                    { key: 'N', value: 'No AutoPA', image: '/images/none.png', defineValue: '0' },
-                    { key: 'Y', value: 'AutoPA is installed', image: '/images/autopa.png', defineValue: '1' },
-                ]
-            },
-        },
-        {
-            title: 'Azimuth Stepper',
-            label: 'Which stepper motor are you using for the Azimuth:',
-            variable: 'az',
-            condition: "$autopa == Y",
-            preamble: ['// Using the {v} stepper for AZ'],
-            define: 'AZ_STEPPER_TYPE',
-            control: {
-                type: 'radioimg',
-                choices: [
-                    { key: 'BYJ', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48', additionalLines: ['#define AZ_DRIVER_TYPE DRIVER_TYPE_ULN2003'] },
-                    { key: 'N1709', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
-                ]
-            },
-        },
-        {
-            title: 'Azimuth Driver',
-            label: 'Which driver board are you using to drive the Azimuth stepper motor:',
-            variable: 'azdrv',
-            condition: "$az == N1709",
-            preamble: ['// Using the {v} driver for AZ stepper motor'],
-            define: 'AZ_DRIVER_TYPE',
-            control: {
-                type: 'radioimg',
-                choices: [
-                    { key: 'U', value: 'ULN2003', image: '/images/uln2003.png', defineValue: 'DRIVER_TYPE_ULN2003' },
-                    { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
-                    { key: 'TMC2209U', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
-                    { key: 'TMC2209S', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
-                ]
-            },
-        },
-        {
-            title: 'Azimuth Advanced Settings',
-            label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the AZ stepper specs and desired settings:',
-            variable: 'azpower',
-            condition: "($fwversion IN [V19,V197,V1911,V1915]) AND ($azdrv == TMC2209U)",
-            preamble: ['// Define AZ stepper motor power settings'],
-            define: '',
-            control: {
-                type: 'textinput',
-                choices: [
-                    { key: 'P', label: 'Power rating in mA', defaultValue: 900, defineLine: '#define AZ_MOTOR_CURRENT_RATING      {0} // mA' },
-                    { key: 'O', label: 'Operating percentage', defaultValue: 80, defineLine: '#define AZ_OPERATING_CURRENT_SETTING {0} // %' },
-                ]
-            },
-        },
-        {
-            title: 'Altitude Stepper',
-            label: 'Which stepper motor are you using for the Altitude:',
-            variable: 'alt',
-            condition: "$autopa == Y",
-            preamble: ['// Using the {v} stepper for ALT'],
-            define: 'ALT_STEPPER_TYPE',
-            control: {
-                type: 'radioimg',
-                choices: [
-                    { key: 'BYJ', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48', additionalLines: ['#define ALT_DRIVER_TYPE DRIVER_TYPE_ULN2003'] },
-                    { key: 'N1709', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
-                ]
-            },
-        },
-        {
-            title: 'Altitude Driver',
-            label: 'Which driver board are you using to drive the Altitude stepper motor:',
-            variable: 'altdrv',
-            condition: "$alt == N1709",
-            preamble: ['// Using the {v} driver for ALT stepper motor'],
-            define: 'ALT_DRIVER_TYPE',
-            control: {
-                type: 'radioimg',
-                choices: [
-                    { key: 'U', value: 'ULN2003', image: '/images/uln2003.png', defineValue: 'DRIVER_TYPE_ULN2003' },
-                    { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
-                    { key: 'TMC2209U', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
-                    { key: 'TMC2209S', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
-                ]
-            },
-        },
-        {
-            title: 'Altitude Advanced Settings',
-            label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the ALT stepper specs and desired settings:',
-            variable: 'altpower',
-            condition: "($fwversion IN [V19,V197,V1911,V1915]) AND ($altdrv == TMC2209U)",
-            preamble: ['// Define ALT stepper motor power settings'],
-            define: '',
-            control: {
-                type: 'textinput',
-                choices: [
-                    { key: 'P', label: 'Power rating in mA', defaultValue: 900, defineLine: '#define ALT_MOTOR_CURRENT_RATING      {0} // mA' },
-                    { key: 'O', label: 'Operating percentage', defaultValue: 80, defineLine: '#define ALT_OPERATING_CURRENT_SETTING {0} // %' },
-                ]
-            },
-        },
-        // V1.9.06 and lower ends //////////////////////////////////////
-
-        // V1.9.07 to V1.9.15 begins //////////////////////////////////////
-        {
-            title: 'Auto Polar Align',
-            label: 'Do you have the AutoPA add on:',
-            variable: 'autopa907',
-            condition: "$fwversion IN [V197,V1911,V1915]",
-            preamble: ['////////////////////////////////', '// AutoPA Addon configuration ', '// Define whether we have the AutoPA add on or not. Currently: {v}'],
-            define: '',
-            control: {
-                type: 'radioimg',
-                choices: [
-                    { key: 'N', value: 'No AutoPA', image: '/images/none.png', additionalLines: ['// No AutoPA settings'] },
-                    { key: 'ALT', value: 'Altitude stepper only', image: '/images/autopa_alt.png' },
-                    { key: 'AZ', value: 'Azimuth stepper only', image: '/images/autopa_az.png' },
-                    { key: 'ALTAZ', value: 'Full AutoPA is installed', image: '/images/autopa.png' },
-                ]
-            },
-        },
-        {
-            title: 'Azimuth Stepper',
-            label: 'Which stepper motor are you using for the Azimuth:',
-            variable: 'az907',
-            condition: "$autopa907 IN [AZ,ALTAZ]",
-            preamble: ['// Using the {v} stepper for AZ'],
-            define: 'AZ_STEPPER_TYPE',
-            control: {
-                type: 'radioimg',
-                choices: [
-                    { key: 'BYJ', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48', additionalLines: ['#define AZ_DRIVER_TYPE DRIVER_TYPE_ULN2003'] },
-                    { key: 'BYJMOD', value: '28BYJ-48 (Bipolar)', image: '/images/byj48mod.png', defineValue: 'STEPPER_TYPE_28BYJ48' },
-                    { key: 'N1709', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
-                ]
-            },
-        },
-        {
-            title: 'Azimuth Driver',
-            label: 'Which driver board are you using to drive the Azimuth stepper motor:',
-            variable: 'azdrv907',
-            condition: "($az907 == NEMA) OR ($az907 == BYJMOD)",
-            preamble: ['// Using the {v} driver for AZ stepper motor'],
-            define: 'AZ_DRIVER_TYPE',
-            control: {
-                type: 'radioimg',
-                choices: [
-                    { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
-                    { key: 'TMC2209S', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
-                    { key: 'TMC2209U', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
-                ]
-            },
-        },
-        {
-            title: 'Azimuth Advanced Settings',
-            label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the AZ stepper specs and desired settings:',
-            variable: 'azpower907',
-            condition: "($fwversion IN [V19,V197,V1911,V1915]) AND ($azdrv907 == TMC2209U)",
-            preamble: ['// Define AZ stepper motor power settings'],
-            define: '',
-            control: {
-                type: 'textinput',
-                choices: [
-                    { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.az907}', defineLine: '#define AZ_MOTOR_CURRENT_RATING      {0} // mA' },
-                    { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.az907}', defineLine: '#define AZ_OPERATING_CURRENT_SETTING {0} // %' },
-                ]
-            },
-        },
-        {
-            title: 'Altitude Stepper',
-            label: 'Which stepper motor are you using for the Altitude:',
-            variable: 'alt907',
-            condition: "$autopa907 IN [ALT,ALTAZ]",
-            preamble: ['// Using the {v} stepper for ALT'],
-            define: 'ALT_STEPPER_TYPE',
-            control: {
-                type: 'radioimg',
-                choices: [
-                    { key: 'BYJ', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48', additionalLines: ['#define ALT_DRIVER_TYPE DRIVER_TYPE_ULN2003'] },
-                    { key: 'BYJMOD', value: '28BYJ-48 (Bipolar)', image: '/images/byj48mod.png', defineValue: 'STEPPER_TYPE_28BYJ48' },
-                    { key: 'N1709', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
-                ]
-            },
-        },
-        {
-            title: 'Altitude Driver',
-            label: 'Which driver board are you using to drive the Altitude stepper motor:',
-            variable: 'altdrv907',
-            condition: "($alt907 == NEMA) OR ($alt907 == BYJMOD)",
-            preamble: ['// Using the {v} driver for ALT stepper motor'],
-            define: 'ALT_DRIVER_TYPE',
-            control: {
-                type: 'radioimg',
-                choices: [
-                    { key: 'A4988', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
-                    { key: 'TMC2209U', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
-                    { key: 'TMC2209S', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
-                ]
-            },
-        },
-        {
-            title: 'Altitude Advanced Settings',
-            label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the ALT stepper specs and desired settings:',
-            variable: 'altpower907',
-            condition: "($fwversion IN [V19,V197,V1911,V1915]) AND ($altdrv907 == TMC2209U)",
-            preamble: ['// Define ALT stepper motor power settings'],
-            define: '',
-            control: {
-                type: 'textinput',
-                choices: [
-                    { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.alt907}', defineLine: '#define ALT_MOTOR_CURRENT_RATING      {0} // mA' },
-                    { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.alt907}', defineLine: '#define ALT_OPERATING_CURRENT_SETTING {0} // %' },
-                ]
-            },
-        },
-        // V1.9.07 to V1.9.15 ends //////////////////////////////////////
 
         // V1.9.11 and later begins //////////////////////////////////////
         {
+            id: 'FC',
             title: 'Focuser support',
             label: 'Do you want to support a focuser on E1:',
             variable: 'focuser',
-            condition: "($fwversion IN [V1911,V1915,V1930]) AND ($board == MKSV21)",
+            condition: "$board == M21",
             preamble: ['////////////////////////////////', '// Focuser configuration ', '// Define whether to support a focusing stepper motor on E1 or not. Currently: {v}'],
             define: '',
             control: {
                 type: 'radioimg',
                 choices: [
                     { key: 'N', value: 'No Focuser', image: '/images/none.png', additionalLines: ['// No Focuser settings'] },
-                    { key: 'Y', value: 'Focuser stepper', image: '/images/none.png' },
+                    { key: 'Y', value: 'Focuser stepper', image: '/images/focuser.png' },
                 ]
             },
         },
         {
+            id: 'FS',
             title: 'Focuser Stepper',
             label: 'Which stepper motor are you using for the Focuser:',
             variable: 'focusmotor',
@@ -865,106 +667,111 @@ const WizardStep = (props) => {
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'BYJ', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48', additionalLines: ['#define FOCUS_DRIVER_TYPE  DRIVER_TYPE_ULN2003'] },
-                    { key: 'N1709', value: 'NEMA 17, 0.9°/step w/ TMC2209 UART', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define FOCUS_DRIVER_TYPE  DRIVER_TYPE_TMC2209_UART', '#define FOCUS_STEPPER_SPR               400 // steps/rev', ] },
-                    { key: 'N1718', value: 'NEMA 17, 1.8°/step w/ TMC2209 UART', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define FOCUS_DRIVER_TYPE  DRIVER_TYPE_TMC2209_UART', '#define FOCUS_STEPPER_SPR               200 // steps/rev', ] },
+                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar) w/ TMC2209 UART', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define FOCUS_DRIVER_TYPE   DRIVER_TYPE_TMC2209_UART', '#define FOCUS_STEPPER_SPR  4096 // steps/rev',] },
+                    { key: 'N9', value: 'NEMA 17, 0.9°/step w/ TMC2209 UART', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define FOCUS_DRIVER_TYPE  DRIVER_TYPE_TMC2209_UART', '#define FOCUS_STEPPER_SPR  400 // steps/rev',] },
+                    { key: 'N8', value: 'NEMA 17, 1.8°/step w/ TMC2209 UART', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define FOCUS_DRIVER_TYPE  DRIVER_TYPE_TMC2209_UART', '#define FOCUS_STEPPER_SPR  200 // steps/rev',] },
                 ]
             },
         },
         {
+            id: 'FA',
             title: 'Focuser Advanced Settings',
             label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the Focus stepper specs and desired settings:',
             variable: 'focuspower',
-            condition: "$focusmotor IN [N1709,N1718]",
+            condition: "$focusmotor IN [N9,N8]",
             preamble: ['// Define Focus stepper motor power settings'],
+            postamble: [{ literal: '#define FOCUSER_ALWAYS_ON                    1' }],
             define: '',
             control: {
                 type: 'textinput',
                 choices: [
-                    { key: 'P', label: 'Power rating in mA', defaultValue: 900, defineLine: '#define FOCUS_MOTOR_CURRENT_RATING      {0} // mA' },
-                    { key: 'O', label: 'Operating percentage', defaultValue: 80, defineLine: '#define FOCUS_OPERATING_CURRENT_SETTING {0} // %' },
-                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 4000, defineLine: '#define FOCUS_STEPPER_ACCELERATION      {0} // steps/s/s' },
-                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: 1500, defineLine: '#define FOCUS_STEPPER_SPEED             {0} // steps/s', additionalLines: ['#define FOCUS_UART_STEALTH_MODE          1 // silent?']  },
-                    { key: 'S', label: 'Microstepping setting', defaultValue: 16, defineLine: '#define FOCUS_MICROSTEPPING             {0} // steps' },
-                    { key: 'H', label: 'Hold current percentage (0 to power down)', defaultValue: 10, defineLine: '#define FOCUSER_MOTOR_HOLD_SETTING             {0} // %' },
+                    { key: 'P', label: 'Power rating in mA', defaultValue: 900, defineLine: '#define FOCUS_MOTOR_CURRENT_RATING       {0} // mA' },
+                    { key: 'O', label: 'Operating percentage', defaultValue: 90, defineLine: '#define FOCUS_OPERATING_CURRENT_SETTING  {0} // %' },
+                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 4000, defineLine: '#define FOCUS_STEPPER_ACCELERATION       {0} // steps/s/s' },
+                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: 1500, defineLine: '#define FOCUS_STEPPER_SPEED              {0} // steps/s', additionalLines: ['#define FOCUS_UART_STEALTH_MODE          1 // silent?'] },
+                    { key: 'S', label: 'Microstepping setting', defaultValue: 16, defineLine: '#define FOCUS_MICROSTEPPING              {0} // steps' },
+                    { key: 'H', label: 'Hold current percentage (0 to power down)', defaultValue: 10, defineLine: '#define FOCUSER_MOTOR_HOLD_SETTING       {0} // %' },
                 ]
             },
         },
 
         // V1.9.11 and later ends //////////////////////////////////////
 
-        
+
         // V1.9.30 and later begins //////////////////////////////////////
         {
+            id: 'AP',
             title: 'Auto Polar Align',
             label: 'Do you have the AutoPA add on:',
             variable: 'autopa930',
-            condition: "$fwversion IN [V1930]",
             preamble: ['////////////////////////////////', '// AutoPA Addon configuration ', '// Define whether we have the AutoPA add on or not. Currently: {v}'],
             define: '',
             control: {
                 type: 'radioimg',
                 choices: [
                     { key: 'N', value: 'No AutoPA', image: '/images/none.png', additionalLines: ['// No AutoPA settings'] },
-                    { key: 'ALT', value: 'Altitude stepper only', image: '/images/autopa_alt.png' },
-                    { key: 'AZ', value: 'Azimuth stepper only', image: '/images/autopa_az.png' },
-                    { key: 'ALTAZ', value: 'Full AutoPA is installed', image: '/images/autopa.png' },
+                    { key: 'L', value: 'Altitude stepper only', image: '/images/autopa_alt.png' },
+                    { key: 'Z', value: 'Azimuth stepper only', image: '/images/autopa_az.png' },
+                    { key: 'B', value: 'Full AutoPA is installed', image: '/images/autopa.png' },
                 ]
             },
         },
         {
+            id: 'AV',
             title: 'AutoPA Version',
             label: 'What version of AutoPA do you have installed:',
             variable: 'autopaversion',
-            condition: "$autopa930 IN [AZ,ALT,ALTAZ]",
+            condition: "$autopa930 IN [Z,L,B]",
             preamble: ['// Using AutoPA {v}.'],
             define: '',
             control: {
                 type: 'radioimg',
                 choices: [
                     { key: '1', value: 'V1.0', image: '/images/none.png' },
-                    { key: '2', value: 'V2.0', image: '/images/none.png', additionalLines: ['#define AUTOPA_VERSION 2']  },
+                    { key: '2', value: 'V2.0', image: '/images/none.png', additionalLines: ['#define AUTOPA_VERSION 2'] },
                 ]
             },
         },
         {
+            id: 'ZS',
             title: 'Azimuth Stepper',
             label: 'Which stepper motor are you using for the Azimuth:',
             variable: 'az930',
-            condition: "$autopa930 IN [AZ,ALTAZ]",
+            condition: "$autopa930 IN [Z,B]",
             preamble: ['// Using the {v} stepper for AZ'],
             define: 'AZ_STEPPER_TYPE',
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'BYJ', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48', additionalLines: ['#define AZ_DRIVER_TYPE DRIVER_TYPE_ULN2003'] },
-                    { key: 'BYJMOD', value: '28BYJ-48 (Bipolar)', image: '/images/byj48mod.png', defineValue: 'STEPPER_TYPE_28BYJ48' },
-                    { key: 'N1709', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
-                    { key: 'N1718', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define AZ_STEPPER_SPR 200.0f'] },
+                    { key: 'BM', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48mod.png', defineValue: 'STEPPER_TYPE_28BYJ48' },
+                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
+                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define AZ_STEPPER_SPR 200.0f'] },
                 ]
             },
         },
         {
+            id: 'ZD',
             title: 'Azimuth Driver',
             label: 'Which driver board are you using to drive the Azimuth stepper motor:',
             variable: 'azdrv930',
-            condition: "($az930 == N1709) OR ($az930 == N1718) OR ($az930 == BYJMOD)",
+            condition: "($az930 == N9) OR ($az930 == N8) OR ($az930 == BM)",
             preamble: ['// Using the {v} driver for AZ stepper motor'],
             define: 'AZ_DRIVER_TYPE',
             control: {
                 type: 'radioimg',
                 choices: [
                     { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
-                    { key: 'TMC2209S', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
-                    { key: 'TMC2209U', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
+                    { key: 'TU', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
+                    { key: 'TS', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
                 ]
             },
         },
         {
+            id: 'ZA',
             title: 'Azimuth Advanced Settings',
             label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the AZ stepper specs and desired settings:',
             variable: 'azpower930',
-            condition: "($fwversion IN [V1930]) AND ($azdrv930 == TMC2209U)",
+            condition: "$azdrv930 == TU",
             preamble: ['// Define AZ stepper motor power settings'],
             define: '',
             control: {
@@ -972,47 +779,51 @@ const WizardStep = (props) => {
                 choices: [
                     { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.az930}', defineLine: '#define AZ_MOTOR_CURRENT_RATING      {0} // mA' },
                     { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.az930}', defineLine: '#define AZ_OPERATING_CURRENT_SETTING {0} // %' },
+                    { key: 'H', label: 'Hold current percentage (0 to power down)', defaultValue: '{Defaults.HoldPercentage.az930}', defineLine: '#define AZ_MOTOR_HOLD_SETTING        {0} // %' },
                 ]
             },
         },
         {
+            id: 'LS',
             title: 'Altitude Stepper',
             label: 'Which stepper motor are you using for the Altitude:',
             variable: 'alt930',
-            condition: "$autopa930 IN [ALT,ALTAZ]",
+            condition: "$autopa930 IN [L,B]",
             preamble: ['// Using the {v} stepper for ALT'],
             define: 'ALT_STEPPER_TYPE',
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'BYJ', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48', additionalLines: ['#define ALT_DRIVER_TYPE DRIVER_TYPE_ULN2003'] },
-                    { key: 'BYJMOD', value: '28BYJ-48 (Bipolar)', image: '/images/byj48mod.png', defineValue: 'STEPPER_TYPE_28BYJ48' },
-                    { key: 'N1709', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
-                    { key: 'N1718', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define ALT_STEPPER_SPR 200.0f'] },
+                    { key: 'BY', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48', additionalLines: ['#define ALT_DRIVER_TYPE DRIVER_TYPE_ULN2003'] },
+                    { key: 'BM', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48mod.png', defineValue: 'STEPPER_TYPE_28BYJ48' },
+                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
+                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define ALT_STEPPER_SPR 200.0f'] },
                 ]
             },
         },
         {
+            id: 'LD',
             title: 'Altitude Driver',
             label: 'Which driver board are you using to drive the Altitude stepper motor:',
             variable: 'altdrv930',
-            condition: "($alt930 == N1709) OR ($alt930 == N1718) OR ($alt930 == BYJMOD)",
+            condition: "($alt930 == N9) OR ($alt930 == N8) OR ($alt930 == BM)",
             preamble: ['// Using the {v} driver for ALT stepper motor'],
             define: 'ALT_DRIVER_TYPE',
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'A4988', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
-                    { key: 'TMC2209S', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
-                    { key: 'TMC2209U', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
+                    { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
+                    { key: 'TU', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
+                    { key: 'TS', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
                 ]
             },
         },
         {
+            id: 'LA',
             title: 'Altitude Advanced Settings',
             label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the ALT stepper specs and desired settings:',
             variable: 'altpower930',
-            condition: "($fwversion IN [V1930]) AND ($altdrv930 == TMC2209U)",
+            condition: "$altdrv930 == TU",
             preamble: ['// Define ALT stepper motor power settings'],
             define: '',
             control: {
@@ -1020,11 +831,38 @@ const WizardStep = (props) => {
                 choices: [
                     { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.alt930}', defineLine: '#define ALT_MOTOR_CURRENT_RATING      {0} // mA' },
                     { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.alt930}', defineLine: '#define ALT_OPERATING_CURRENT_SETTING {0} // %' },
+                    { key: 'H', label: 'Hold current percentage (0 to power down)', defaultValue: '{Defaults.HoldPercentage.alt930}', defineLine: '#define ALT_MOTOR_HOLD_SETTING        {0} // %' },
                 ]
             },
         },
         // V1.9.30 ends //////////////////////////////////////
-           
+
+        {
+            id: 'AH',
+            title: 'RA Auto Home',
+            label: 'Do you have the Hall sensor-based RA AutoHome add on:',
+            variable: 'hallhome',
+            condition: "$board IN [M,M21]",
+            preamble: ['////////////////////////////////', '// Is the RA Auto Home addon installed'],
+            define: 'USE_HALL_SENSOR_RA_AUTOHOME',
+            postamble: [{
+                condition: '$hallhome == 1',
+                literal: [
+                    '',
+                    '// If your Hall sensor is not on the default pin (53 on MKS, 40 on Mega), uncomment and change the following line',
+                    '// #define RA_HOMING_SENSOR_PIN 53',
+                ]
+            }
+            ],
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'N', value: 'No Hall sensor homing', image: '/images/none.png', defineValue: '0' },
+                    { key: 'Y', value: 'RA Homing Hall sensor installed', image: '/images/none.png', defineValue: '1' },
+                ]
+            },
+        },
+
     ];
 
     if (stepIndex < 0) {
@@ -1042,8 +880,9 @@ const WizardStep = (props) => {
                 let foundControl = stepProps[index].control.choices.find(choice => foundConfig.value === choice.key);
                 if (!foundControl) {
                     console.log("Could not find control ", foundConfig)
+                } else {
+                    description = foundControl.value;
                 }
-                description = foundControl.value;
             }
         }
 
@@ -1060,10 +899,15 @@ const WizardStep = (props) => {
     steps.push(<Step title='Completed' />)
 
     if (showResult) {
+        let configKey = ''
         let defines = [];
         configuration.forEach(config => {
+            if (configKey.length) {
+                configKey += ','
+            }
             let property = stepProps.find(prop => prop.variable === config.variable);
             let defineLine = null;
+            configKey += property.id
             if (property.control.type === 'textinput') {
                 if (property.preamble) {
                     defines = [...defines, ...property.preamble];
@@ -1071,15 +915,20 @@ const WizardStep = (props) => {
                 property.control.choices.forEach(choice => {
                     let configVal = config.value.find(cfgval => cfgval.key === choice.key);
                     let val = (configVal ? configVal.value : null) || getDefaultValue(choice.defaultValue) || '';
+                    configKey += choice.key + val + ':'
                     defineLine = choice.defineLine.replace('{0}', val);
                     defines = [...defines, defineLine];
                     if (choice.additionalLines) {
                         defines = [...defines, ...choice.additionalLines];
                     }
                 })
+                if (property.postamble) {
+
+                }
             }
             else {
                 let propertyValue = property.control.choices.find(choice => choice.key === config.value);
+                configKey += ':' + propertyValue.key
                 if (property.preamble) {
                     defines = [...defines, ...(property.preamble.map((pre) => pre.replace('{v}', propertyValue.value)))];
                 }
@@ -1089,9 +938,30 @@ const WizardStep = (props) => {
                 if (propertyValue.additionalLines) {
                     defines = [...defines, ...propertyValue.additionalLines];
                 }
+                if (property.postamble) {
+                    const postLines = []
+                    property.postamble.forEach(entry => {
+                        let output = true
+                        if (entry.condition) {
+                            output = false
+                        }
+                        if (entry.literal) {
+                            postLines.push(...entry.literal)
+                        }
+                    })
+                    defines = [...defines, ...postLines];
+                }
             }
             defines = [...defines, ''];
         });
+
+        defines.splice(4, 0, '// Unique ConfigKey: ' + configKey);
+
+        defines.push('///////////////////////');
+        defines.push('// Debug settings');
+        defines.push('#define DEBUG_LEVEL (DEBUG_NONE)');
+        defines.push('');
+
 
         return <div className='steps-container'>
             <div className='steps-column'>
@@ -1105,13 +975,14 @@ const WizardStep = (props) => {
                 {
                     defines.map(define => <p className='code'>{define}&nbsp;</p>)
                 }
-                <p className='code'>#define DEBUG_LEVEL (DEBUG_NONE)</p>
-                <br />
                 <br />
                 <div className='back-button' >
                     <Button type='primary' onClick={() => downloadTxtFile(defines)}>Open as Text in new Tab</Button>
                 </div>
 
+                <div className='back-button' >
+                    <Button type='primary' onClick={() => download('Configuration_local.hpp', defines)}>Download</Button>
+                </div>
 
                 <div className='back-button' >
                     <Button type='primary' onClick={() => onRestart()}>Restart</Button>
@@ -1183,7 +1054,7 @@ const WizardStep = (props) => {
                     {control}
                 </div>
                 <div className='back-button' >
-                    <Button type='primary' onClick={() => setStepIndex(stepIndex - 1)} disabled={stepIndex < 1}>Back</Button>
+                    <Button type='primary' onClick={() => goBackInHistory()} disabled={stepIndex < 1}>Back</Button>
                 </div>
             </div>
         </div>
