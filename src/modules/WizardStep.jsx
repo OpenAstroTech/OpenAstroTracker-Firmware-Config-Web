@@ -15,11 +15,11 @@ import { parseExpression } from './parser.js'
 const { Step } = Steps;
 
 const Defaults = {
-    PowerRating: { BY: 300, N9: 900, N8: 900 },
-    PowerUtilization: { BY: 100, N9: 90, N8: 90 },
-    HoldPercentage: { BY: 0, N9: 10, N8: 10 },
-    Speed: { BY: 400, N9: 1200, N8: 1200 },
-    Acceleration: { BY: 600, N9: 3000, N8: 3000 },
+    PowerRating: { BY: 150, N9: 900, N8: 900, N49: 400, N48: 400 },
+    PowerUtilization: { BY: 100, N9: 90, N8: 90, N49: 90, N48: 90 },
+    HoldPercentage: { BY: 0, N9: 10, N8: 10, N49: 10, N48: 10 },
+    Speed: { BY: 400, N9: 1200, N8: 1200, N49: 1200, N48: 1200 },
+    Acceleration: { BY: 600, N9: 3000, N8: 3000, N49: 3000, N48: 3000 },
 }
 
 const WizardStep = (props) => {
@@ -429,8 +429,8 @@ const WizardStep = (props) => {
                 type: 'radioimg',
                 choices: [
                     { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define DEC_STEPPER_SPR 2048.0f'] },
-                    { key: 'N79', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE' },
-                    { key: 'N78', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define DEC_STEPPER_SPR 200.0f'] },
+                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE' },
+                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define DEC_STEPPER_SPR 200.0f'] },
                     { key: 'N49', value: 'NEMA 14, 0.9°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLE' },
                     { key: 'N48', value: 'NEMA 14, 1.8°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define DEC_STEPPER_SPR 200.0f'] },
                 ]
@@ -690,8 +690,8 @@ const WizardStep = (props) => {
                 type: 'radioimg',
                 choices: [
                     { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define FOCUS_STEPPER_SPR 2048.0f'] },
-                    { key: 'N79', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE' },
-                    { key: 'N78', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define FOCUS_STEPPER_SPR 200.0f'] },
+                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE' },
+                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define FOCUS_STEPPER_SPR 200.0f'] },
                     { key: 'N49', value: 'NEMA 14, 0.9°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLE' },
                     { key: 'N48', value: 'NEMA 14, 1.8°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define FOCUS_STEPPER_SPR 200.0f'] },
                 ]
@@ -735,10 +735,10 @@ const WizardStep = (props) => {
         },
         {
             title: 'Focuser Motion Settings',
-            label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the DEC stepper specs and desired settings:',
+            label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the Focuser stepper specs and desired settings:',
             variable: 'focmotion',
             condition: "$focuser == Y",
-            preamble: ['// Define some DEC stepper motor settings'],
+            preamble: ['// Define some focuser stepper motor settings'],
             define: '',
             control: {
                 type: 'textinput',
