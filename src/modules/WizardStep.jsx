@@ -20,6 +20,7 @@ const Defaults = {
     HoldPercentage: { BY: 0, N9: 10, N8: 10, N49: 10, N48: 10 },
     Speed: { BY: 400, N9: 1200, N8: 1200, N49: 1200, N48: 1200 },
     Acceleration: { BY: 600, N9: 3000, N8: 3000, N49: 3000, N48: 3000 },
+    FocuserMicrostepping: { BY: 1, N9: 8, N8: 8, N49: 8, N48: 8 },
 }
 
 const WizardStep = (props) => {
@@ -390,6 +391,7 @@ const WizardStep = (props) => {
             },
         },
         {
+            id: 'RMS',
             title: 'RA Motion Settings',
             label: 'These are some advanced settings for stepper speed you may want to override. The defaults are set already, please only change them if you are sure what they do and what their valid ranges are.',
             variable: 'ramotion',
@@ -467,7 +469,7 @@ const WizardStep = (props) => {
                     { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.decstpr}', defineLine: '#define DEC_OPERATING_CURRENT_SETTING  {0} // %' },
                     { key: 'S', label: 'Microstepping while slewing', defaultValue: 16, defineLine: '#define DEC_SLEW_MICROSTEPPING         {0}' },
                     {
-                        key: 'T', label: 'Microstepping while tracking', defaultValue: 64, defineLine: '#define DEC_GUIDE_MICROSTEPPING        {0}',
+                        key: 'T', label: 'Microstepping while guiding', defaultValue: 64, defineLine: '#define DEC_GUIDE_MICROSTEPPING        {0}',
                         additionalLines: [
                             '',
                             '// TMC2209 Stealth Mode (spreadCycle) - When set to 0, tracking is more precise, but noisy (high-pitched sound). When set to 1, they are silent.',
@@ -481,6 +483,7 @@ const WizardStep = (props) => {
             },
         },
         {
+            id: 'DMS',
             title: 'DEC Motion Settings',
             label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the DEC stepper specs and desired settings:',
             variable: 'decmotion',
@@ -728,12 +731,13 @@ const WizardStep = (props) => {
                 choices: [
                     { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.focstpr}', defineLine: '#define FOCUS_MOTOR_CURRENT_RATING       {0} // mA' },
                     { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.focstpr}', defineLine: '#define FOCUS_OPERATING_CURRENT_SETTING  {0} // %' },
-                    { key: 'S', label: 'Microstepping setting', defaultValue: 16, defineLine: '#define FOCUS_MICROSTEPPING              {0} // steps' },
+                    { key: 'S', label: 'Microstepping setting', defaultValue: '{Defaults.FocuserMicrostepping.focstpr}', defineLine: '#define FOCUS_MICROSTEPPING              {0} // steps' },
                     { key: 'H', label: 'Hold current percentage (0 to power down)', defaultValue: 10, defineLine: '#define FOCUSER_MOTOR_HOLD_SETTING       {0} // %', additionalLines: ['#define FOCUS_UART_STEALTH_MODE          1 // silent?'] },
                 ]
             },
         },
         {
+            id: 'FMS',
             title: 'Focuser Motion Settings',
             label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the Focuser stepper specs and desired settings:',
             variable: 'focmotion',
@@ -832,6 +836,7 @@ const WizardStep = (props) => {
             },
         },
         {
+            id: 'ZAO',
             title: 'Azimuth Always On',
             label: 'It is possible to keep the azimuth motor energized at all times to prevent any shifting in position. This is not necessarily needed for 28BYJ motors, however it is recommended for NEMAs when using AutoPA V2.0.',
             variable: 'azalwayson',
@@ -898,6 +903,7 @@ const WizardStep = (props) => {
             },
         },
         {
+            id: 'LAO',
             title: 'Altitude Always On',
             label: 'It is possible to keep the altitude motor energized at all times to prevent any shifting in position. This is usually not needed.',
             variable: 'altalwayson',
