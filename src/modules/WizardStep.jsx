@@ -667,7 +667,7 @@ const WizardStep = (props) => {
             title: 'Focuser support',
             label: 'Do you want to support a focuser on E1:',
             variable: 'focuser',
-            condition: "$board == M21",
+            condition: "$board IN [M,M10,M20,M21]",
             preamble: ['////////////////////////////////', '// Focuser configuration ', '// Define whether to support a focusing stepper motor on E1 or not. Currently: {v}'],
             define: '',
             control: {
@@ -702,6 +702,7 @@ const WizardStep = (props) => {
             title: 'Focuser Driver',
             label: 'Which driver board are you using to drive the focuser stepper motor:',
             variable: 'focdrv',
+            condition: "$focuser == Y",
             preamble: ['// Using the {v} driver for focuser stepper'],
             define: 'DEC_DRIVER_TYPE',
             control: {
@@ -718,7 +719,7 @@ const WizardStep = (props) => {
             title: 'Focuser Advanced Settings',
             label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the Focus stepper specs and desired settings:',
             variable: 'focuspower',
-            condition: "$focusmotor IN [N9,N8]",
+            condition: "$focdrv == TU",
             preamble: ['// Define Focus stepper motor power settings'],
             postamble: [{ literal: '#define FOCUSER_ALWAYS_ON                    1' }],
             define: '',
@@ -736,6 +737,7 @@ const WizardStep = (props) => {
             title: 'Focuser Motion Settings',
             label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the DEC stepper specs and desired settings:',
             variable: 'focmotion',
+            condition: "$focuser == Y",
             preamble: ['// Define some DEC stepper motor settings'],
             define: '',
             control: {
@@ -757,7 +759,7 @@ const WizardStep = (props) => {
                 type: 'radioimg',
                 choices: [
                     { key: 'N', value: 'No AutoPA', image: '/images/none.png', additionalLines: ['// No AutoPA settings'] },
-                    { key: 'B', value: 'AutoPA is installed', image: '/images/autopa.png' },
+                    { key: 'Y', value: 'AutoPA is installed', image: '/images/autopa.png' },
                 ]
             },
 
@@ -767,7 +769,7 @@ const WizardStep = (props) => {
             title: 'AutoPA Version',
             label: 'What version of AutoPA do you have installed:',
             variable: 'autopaversion',
-            condition: "$autopa",
+            condition: "$autopa == Y",
             preamble: ['// Using AutoPA {v}.'],
             define: '',
             control: {
@@ -783,7 +785,7 @@ const WizardStep = (props) => {
             title: 'Azimuth Stepper',
             label: 'Which stepper motor are you using for the Azimuth:',
             variable: 'az',
-            condition: "$autopa",
+            condition: "$autopa == Y",
             preamble: ['// Using the {v} stepper for AZ'],
             define: 'AZ_STEPPER_TYPE',
             control: {
@@ -800,7 +802,7 @@ const WizardStep = (props) => {
             title: 'Azimuth Driver',
             label: 'Which driver board are you using to drive the Azimuth stepper motor:',
             variable: 'azdrv',
-            condition: "$autopa",
+            condition: "$autopa == Y",
             preamble: ['// Using the {v} driver for AZ stepper motor'],
             define: 'AZ_DRIVER_TYPE',
             control: {
@@ -833,7 +835,7 @@ const WizardStep = (props) => {
             title: 'Azimuth Always On',
             label: 'It is possible to keep the azimuth motor energized at all times to prevent any shifting in position. This is not necessarily needed for 28BYJ motors, however it is recommended for NEMAs when using AutoPA V2.0.',
             variable: 'azalwayson',
-            condition: "$autopa",
+            condition: "$autopa == Y",
             preamble: ['// Define AZ always-on'],
             define: 'AZ_ALWAYS_ON',
             control: {
@@ -849,7 +851,7 @@ const WizardStep = (props) => {
             title: 'Altitude Stepper',
             label: 'Which stepper motor are you using for the Altitude:',
             variable: 'alt',
-            condition: "$autopa",
+            condition: "$autopa == Y",
             preamble: ['// Using the {v} stepper for ALT'],
             define: 'ALT_STEPPER_TYPE',
             control: {
@@ -866,7 +868,7 @@ const WizardStep = (props) => {
             title: 'Altitude Driver',
             label: 'Which driver board are you using to drive the Altitude stepper motor:',
             variable: 'altdrv',
-            condition: "$autopa",
+            condition: "$autopa == Y",
             preamble: ['// Using the {v} driver for ALT stepper motor'],
             define: 'ALT_DRIVER_TYPE',
             control: {
@@ -899,7 +901,7 @@ const WizardStep = (props) => {
             title: 'Altitude Always On',
             label: 'It is possible to keep the altitude motor energized at all times to prevent any shifting in position. This is usually not needed.',
             variable: 'altalwayson',
-            condition: "$autopa",
+            condition: "$autopa == Y",
             preamble: ['// Define ALT always-on'],
             define: 'ALT_ALWAYS_ON',
             control: {
