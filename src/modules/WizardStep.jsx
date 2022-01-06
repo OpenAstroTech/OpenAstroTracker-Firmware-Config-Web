@@ -674,7 +674,7 @@ const WizardStep = (props) => {
                 type: 'radioimg',
                 choices: [
                     { key: 'N', value: 'No Focuser', image: '/images/none.png', additionalLines: ['// No Focuser settings'] },
-                    { key: 'Y', value: 'Focuser stepper', image: '/images/focuser.png' },
+                    { key: 'Y', value: 'Focuser stepper', image: '/images/nema14.png' },
                 ]
             },
         },
@@ -689,11 +689,11 @@ const WizardStep = (props) => {
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define DEC_STEPPER_SPR 2048.0f'] },
+                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define FOCUS_STEPPER_SPR 2048.0f'] },
                     { key: 'N79', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE' },
-                    { key: 'N78', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define DEC_STEPPER_SPR 200.0f'] },
+                    { key: 'N78', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define FOCUS_STEPPER_SPR 200.0f'] },
                     { key: 'N49', value: 'NEMA 14, 0.9°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLE' },
-                    { key: 'N48', value: 'NEMA 14, 1.8°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define DEC_STEPPER_SPR 200.0f'] },
+                    { key: 'N48', value: 'NEMA 14, 1.8°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define FOCUS_STEPPER_SPR 200.0f'] },
                 ]
             },
         },
@@ -704,7 +704,7 @@ const WizardStep = (props) => {
             variable: 'focdrv',
             condition: "$focuser == Y",
             preamble: ['// Using the {v} driver for focuser stepper'],
-            define: 'DEC_DRIVER_TYPE',
+            define: 'FOCUS_DRIVER_TYPE',
             control: {
                 type: 'radioimg',
                 choices: [
