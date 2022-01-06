@@ -743,8 +743,8 @@ const WizardStep = (props) => {
             control: {
                 type: 'textinput',
                 choices: [
-                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: '{Defaults.Acceleration.focstpr}', defineLine: '#define DEC_STEPPER_ACCELERATION {0}' },
-                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: '{Defaults.Speed.focstpr}', defineLine: '#define DEC_STEPPER_SPEED {0}' },
+                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: '{Defaults.Acceleration.focstpr}', defineLine: '#define FOCUS_STEPPER_ACCELERATION {0}' },
+                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: '{Defaults.Speed.focstpr}', defineLine: '#define FOCUS_STEPPER_SPEED {0}' },
                 ]
             },
         },
