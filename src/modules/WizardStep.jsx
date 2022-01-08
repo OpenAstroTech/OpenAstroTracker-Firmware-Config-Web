@@ -15,11 +15,21 @@ import { parseExpression } from './parser.js'
 const { Step } = Steps;
 
 const Defaults = {
-    PowerRating: { BM: 300, N9: 900, N8: 900 },
-    PowerUtilization: { BM: 100, N9: 90, N8: 90 },
-    HoldPercentage: { BM: 0, N9: 10, N8: 10 },
+    PowerRating: { BY: 150, N9: 900, N8: 900, N49: 400, N48: 400 },
+    PowerUtilization: { BY: 100, N9: 90, N8: 90, N49: 90, N48: 90 },
+    HoldPercentage: { BY: 0, N9: 10, N8: 10, N49: 10, N48: 10 },
+    Speed: { BY: 400, N9: 1200, N8: 1200, N49: 1200, N48: 1200 },
+    Acceleration: { BY: 600, N9: 3000, N8: 3000, N49: 3000, N48: 3000 },
+    FocuserMicrostepping: { BY: 1, N9: 8, N8: 8, N49: 8, N48: 8 },
 }
 
+function WizardException(message) {
+    this.message = message;
+    this.name = 'WizardException';
+    this.toString = function () {
+        return this.message;
+    };
+}
 const WizardStep = (props) => {
     const [stepIndex, setStepIndex] = useState(-1);
     const [showResult, setShowResult] = useState(false);
@@ -39,10 +49,13 @@ const WizardStep = (props) => {
         if (typeof val === 'string') {
             if (val.startsWith('{') && val.endsWith('}')) {
                 const words = val.substr(1, val.length - 2).split('.');
+                // console.log("Need default value for: " + val + ", Words are: ", words)
                 const config = configuration.find(v => v.variable === words[2])
+                // console.log("config is ", config)
                 if (config) {
                     if (words[0] === 'Defaults') {
                         const lookup = Defaults[words[1]][config.value]
+                        // console.log("Result for Defaults." + words[1] + "." + config.value + " is " + lookup)
                         return lookup;
                     }
                 }
@@ -64,27 +77,23 @@ const WizardStep = (props) => {
                     const set = expr.rhs.substr(1, expr.rhs.length - 2).split(',');
                     return { bool: set.indexOf(conf.value) !== -1, status: "OK" };
                 }
-                break;
             case 'NOTIN':
                 {
                     const set = expr.rhs.substr(1, expr.rhs.length - 2).split(',');
                     return { bool: set.indexOf(conf.value) === -1, status: "OK" };
                 }
-                break;
             case '==':
             case 'EQ':
                 {
                     return { bool: conf.value === expr.rhs, status: "OK" };
                 }
-                break;
             case '!=':
             case 'NEQ':
                 {
                     return { bool: conf.value !== expr.rhs, status: "OK" };
                 }
-                break;
             default:
-                throw "Unknown operator " + expr.op;
+                throw new WizardException("Unknown operator " + expr.op);
         }
     }
 
@@ -104,7 +113,7 @@ const WizardStep = (props) => {
         }
 
         if (typeof (expr.rhs) !== "object") {
-            throw "rhs should be expression!"
+            throw new WizardException("rhs should be expression!")
         }
 
         const result = evaluateExpression(expr.rhs);
@@ -117,7 +126,7 @@ const WizardStep = (props) => {
         if (expr.op === 'OR') return { bool: lhs || rhs, status: 'ok' };
         if (expr.op === 'XOR') return { bool: lhs !== rhs, status: 'ok' };
 
-        throw "Unknown operator " + expr.op;
+        throw new WizardException("Unknown operator " + expr.op);
     }
 
     const shouldSkipStep = (index) => {
@@ -140,9 +149,9 @@ const WizardStep = (props) => {
                 }
             }
             else {
-                if (nextStep.conditions) {
+                if (nextStep.condition) {
                     let result = true;
-                    nextStep.conditions.forEach(cond => {
+                    nextStep.condition.forEach(cond => {
                         const neededKeys = cond.neededKeys.split(',');
                         const conf = configuration.find(config => config.variable === cond.variable);
                         if (!conf || (neededKeys.indexOf(conf.value) === -1)) {
@@ -172,7 +181,7 @@ const WizardStep = (props) => {
         let nextStepIndex = stepIndex + 1;
         const newStepHistory = [...stepHistory, stepIndex];
         setStepHistory(newStepHistory);
-        console.log("history:", newStepHistory);
+        // console.log("history:", newStepHistory);
 
         let res = shouldSkipStep(nextStepIndex);
         setStepIndex(res.nextIndex);
@@ -220,7 +229,6 @@ const WizardStep = (props) => {
             element.click();
             element.parentNode.removeChild(element);
         }, 200);
-
     }
 
     const onSelect = (index, e) => {
@@ -239,6 +247,7 @@ const WizardStep = (props) => {
             if (!currentConfig) {
                 // It is not, so create it with default values
                 let prop = stepProps[index];
+                // console.log("Next step: ", prop)
                 let newConfig = prop.control.choices.map((v) => { return { key: v.key, value: getDefaultValue(v.defaultValue) || '' } });
                 let newConfiguration = configuration.filter(config => config.variable !== stepProps[index].variable);
                 newConfiguration = [...newConfiguration, { variable: prop.variable, value: newConfig }]
@@ -256,23 +265,22 @@ const WizardStep = (props) => {
             setConfiguration(newConfiguration);
         }
     }
-    const teststepProps = [
-        {
-            title: 'WiFi Access Point Setup',
-            label: 'Enter the WiFi parameters for Access Point mode:',
-            variable: 'wifiparamsa',
-            define: '',
-            preamble: ['// Define the WPA key and host name for the network'],
-            control: {
-                type: 'textinput',
-                choices: [
-                    { key: 'P', label: 'WPA Key for OAT hotspot', defineLine: '#define WIFI_AP_MODE_WPAKEY "{0}"' },
-                    { key: 'H', label: 'Hostname', defaultValue: 'OATScope', defineLine: '#define WIFI_HOSTNAME "{0}"' },
-                ]
-            },
-        },
-
-    ]
+    // const teststepProps = [
+    //     {
+    //         title: 'WiFi Access Point Setup',
+    //         label: 'Enter the WiFi parameters for Access Point mode:',
+    //         variable: 'wifiparamsa',
+    //         define: '',
+    //         preamble: ['// Define the WPA key and host name for the network'],
+    //         control: {
+    //             type: 'textinput',
+    //             choices: [
+    //                 { key: 'P', label: 'WPA Key for OAT hotspot', defineLine: '#define WIFI_AP_MODE_WPAKEY "{0}"' },
+    //                 { key: 'H', label: 'Hostname', defaultValue: 'OATScope', defineLine: '#define WIFI_HOSTNAME "{0}"' },
+    //             ]
+    //         },
+    //     },
+    // ]
 
     const stepProps = [
         {
@@ -319,7 +327,7 @@ const WizardStep = (props) => {
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'M', value: 'ATMega 2560 (or clone)', image: '/images/mega2560.png', defineValue: 'BOARD_AVR_MEGA2560' },
+                    { key: 'M', value: 'RAMPS c/w ATMega 2560 (or clone)', image: '/images/mega2560.png', defineValue: 'BOARD_RAMPS' },
                     { key: 'E', value: 'ESP32', image: '/images/esp32.png', defineValue: 'BOARD_ESP32_ESP32DEV' },
                     { key: 'M10', value: 'MKS GEN L V1.0', image: '/images/mksv10.png', defineValue: 'BOARD_AVR_MKS_GEN_L_V1' },
                     { key: 'M20', value: 'MKS GEN L V2.0', image: '/images/mksv20.png', defineValue: 'BOARD_AVR_MKS_GEN_L_V2' },
@@ -337,9 +345,9 @@ const WizardStep = (props) => {
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define RA_STEPPER_SPR               4096 // steps/rev',] },
-                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
-                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define RA_STEPPER_SPR 200'] },
+                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define RA_STEPPER_SPR  2048.0f // steps/rev',] },
+                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE' },
+                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define RA_STEPPER_SPR 200.0f'] },
                 ]
             },
         },
@@ -348,7 +356,6 @@ const WizardStep = (props) => {
             title: 'RA Driver',
             label: 'Which driver board are you using to drive the RA stepper motor:',
             variable: 'radrv',
-            condition: "$rastpr IN [N9,N8]",
             preamble: ['// Using the {v} driver for RA stepper motor'],
             define: 'RA_DRIVER_TYPE',
             control: {
@@ -371,10 +378,8 @@ const WizardStep = (props) => {
             control: {
                 type: 'textinput',
                 choices: [
-                    { key: 'P', label: 'Power rating in mA', defaultValue: 900, defineLine: '#define RA_MOTOR_CURRENT_RATING       {0} // mA' },
-                    { key: 'O', label: 'Operating percentage', defaultValue: 80, defineLine: '#define RA_OPERATING_CURRENT_SETTING  {0} // %' },
-                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 3000, defineLine: '#define RA_STEPPER_ACCELERATION       {0}' },
-                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: 1200, defineLine: '#define RA_STEPPER_SPEED              {0}' },
+                    { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.rastpr}', defineLine: '#define RA_MOTOR_CURRENT_RATING       {0} // mA' },
+                    { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.rastpr}', defineLine: '#define RA_OPERATING_CURRENT_SETTING  {0} // %' },
                     { key: 'S', label: 'Microstepping while slewing', defaultValue: 8, defineLine: '#define RA_SLEW_MICROSTEPPING         {0}' },
                     {
                         key: 'T', label: 'Microstepping while tracking', defaultValue: 64, defineLine: '#define RA_TRACKING_MICROSTEPPING     {0}',
@@ -387,6 +392,21 @@ const WizardStep = (props) => {
                             '#define RA_INVERT_DIR  0'
                         ]
                     },
+                ]
+            },
+        },
+        {
+            id: 'RMS',
+            title: 'RA Motion Settings',
+            label: 'These are some advanced settings for stepper speed you may want to override. The defaults are set already, please only change them if you are sure what they do and what their valid ranges are.',
+            variable: 'ramotion',
+            preamble: ['// Define some RA stepper motor settings'],
+            define: '',
+            control: {
+                type: 'textinput',
+                choices: [
+                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: '{Defaults.Acceleration.rastpr}', defineLine: '#define RA_STEPPER_ACCELERATION {0}' },
+                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: '{Defaults.Speed.rastpr}', defineLine: '#define RA_STEPPER_SPEED {0}' },
                 ]
             },
         },
@@ -415,11 +435,11 @@ const WizardStep = (props) => {
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define DEC_STEPPER_SPR 4096'] },
-                    { key: 'N79', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
-                    { key: 'N78', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define DEC_STEPPER_SPR 200'] },
-                    { key: 'N49', value: 'NEMA 14, 0.9°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_NEMA17' },
-                    { key: 'N48', value: 'NEMA 14, 1.8°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define DEC_STEPPER_SPR 200'] },
+                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define DEC_STEPPER_SPR 2048.0f'] },
+                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE' },
+                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define DEC_STEPPER_SPR 200.0f'] },
+                    { key: 'N49', value: 'NEMA 14, 0.9°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLE' },
+                    { key: 'N48', value: 'NEMA 14, 1.8°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define DEC_STEPPER_SPR 200.0f'] },
                 ]
             },
         },
@@ -450,13 +470,11 @@ const WizardStep = (props) => {
             control: {
                 type: 'textinput',
                 choices: [
-                    { key: 'P', label: 'Power rating in mA', defaultValue: 900, defineLine: '#define DEC_MOTOR_CURRENT_RATING       {0} // mA' },
-                    { key: 'O', label: 'Operating percentage', defaultValue: 80, defineLine: '#define DEC_OPERATING_CURRENT_SETTING  {0} // %' },
-                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 3000, defineLine: '#define DEC_STEPPER_ACCELERATION       {0}' },
-                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: 1200, defineLine: '#define DEC_STEPPER_SPEED              {0}' },
+                    { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.decstpr}', defineLine: '#define DEC_MOTOR_CURRENT_RATING       {0} // mA' },
+                    { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.decstpr}', defineLine: '#define DEC_OPERATING_CURRENT_SETTING  {0} // %' },
                     { key: 'S', label: 'Microstepping while slewing', defaultValue: 16, defineLine: '#define DEC_SLEW_MICROSTEPPING         {0}' },
                     {
-                        key: 'T', label: 'Microstepping while tracking', defaultValue: 64, defineLine: '#define DEC_GUIDE_MICROSTEPPING        {0}',
+                        key: 'T', label: 'Microstepping while guiding', defaultValue: 64, defineLine: '#define DEC_GUIDE_MICROSTEPPING        {0}',
                         additionalLines: [
                             '',
                             '// TMC2209 Stealth Mode (spreadCycle) - When set to 0, tracking is more precise, but noisy (high-pitched sound). When set to 1, they are silent.',
@@ -466,6 +484,21 @@ const WizardStep = (props) => {
                             '#define DEC_INVERT_DIR  0'
                         ]
                     },
+                ]
+            },
+        },
+        {
+            id: 'DMS',
+            title: 'DEC Motion Settings',
+            label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the DEC stepper specs and desired settings:',
+            variable: 'decmotion',
+            preamble: ['// Define some DEC stepper motor settings'],
+            define: '',
+            control: {
+                type: 'textinput',
+                choices: [
+                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: '{Defaults.Acceleration.decstpr}', defineLine: '#define DEC_STEPPER_ACCELERATION {0}' },
+                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: '{Defaults.Speed.decstpr}', defineLine: '#define DEC_STEPPER_SPEED {0}' },
                 ]
             },
         },
@@ -637,15 +670,12 @@ const WizardStep = (props) => {
                 ]
             },
         },
-
-
-        // V1.9.11 and later begins //////////////////////////////////////
         {
             id: 'FC',
             title: 'Focuser support',
             label: 'Do you want to support a focuser on E1:',
             variable: 'focuser',
-            condition: "$board == M21",
+            condition: "$board IN [M,M10,M20,M21]",
             preamble: ['////////////////////////////////', '// Focuser configuration ', '// Define whether to support a focusing stepper motor on E1 or not. Currently: {v}'],
             define: '',
             control: {
@@ -660,16 +690,35 @@ const WizardStep = (props) => {
             id: 'FS',
             title: 'Focuser Stepper',
             label: 'Which stepper motor are you using for the Focuser:',
-            variable: 'focusmotor',
+            variable: 'focstpr',
             condition: "$focuser == Y",
             preamble: ['// Using the {v} stepper for FOC'],
             define: 'FOCUS_STEPPER_TYPE',
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar) w/ TMC2209 UART', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define FOCUS_DRIVER_TYPE   DRIVER_TYPE_TMC2209_UART', '#define FOCUS_STEPPER_SPR  4096 // steps/rev',] },
-                    { key: 'N9', value: 'NEMA 17, 0.9°/step w/ TMC2209 UART', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define FOCUS_DRIVER_TYPE  DRIVER_TYPE_TMC2209_UART', '#define FOCUS_STEPPER_SPR  400 // steps/rev',] },
-                    { key: 'N8', value: 'NEMA 17, 1.8°/step w/ TMC2209 UART', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define FOCUS_DRIVER_TYPE  DRIVER_TYPE_TMC2209_UART', '#define FOCUS_STEPPER_SPR  200 // steps/rev',] },
+                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define FOCUS_STEPPER_SPR 2048.0f'] },
+                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE' },
+                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define FOCUS_STEPPER_SPR 200.0f'] },
+                    { key: 'N49', value: 'NEMA 14, 0.9°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLE' },
+                    { key: 'N48', value: 'NEMA 14, 1.8°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define FOCUS_STEPPER_SPR 200.0f'] },
+                ]
+            },
+        },
+        {
+            id: 'FD',
+            title: 'Focuser Driver',
+            label: 'Which driver board are you using to drive the focuser stepper motor:',
+            variable: 'focdrv',
+            condition: "$focuser == Y",
+            preamble: ['// Using the {v} driver for focuser stepper'],
+            define: 'FOCUS_DRIVER_TYPE',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
+                    { key: 'TU', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
+                    { key: 'TS', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
                 ]
             },
         },
@@ -678,41 +727,48 @@ const WizardStep = (props) => {
             title: 'Focuser Advanced Settings',
             label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the Focus stepper specs and desired settings:',
             variable: 'focuspower',
-            condition: "$focusmotor IN [N9,N8]",
+            condition: "$focdrv == TU",
             preamble: ['// Define Focus stepper motor power settings'],
-            postamble: [{ literal: '#define FOCUSER_ALWAYS_ON                    1' }],
+            postamble: [{ literal: ['#define FOCUSER_ALWAYS_ON                1'] }],
             define: '',
             control: {
                 type: 'textinput',
                 choices: [
-                    { key: 'P', label: 'Power rating in mA', defaultValue: 900, defineLine: '#define FOCUS_MOTOR_CURRENT_RATING       {0} // mA' },
-                    { key: 'O', label: 'Operating percentage', defaultValue: 90, defineLine: '#define FOCUS_OPERATING_CURRENT_SETTING  {0} // %' },
-                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: 4000, defineLine: '#define FOCUS_STEPPER_ACCELERATION       {0} // steps/s/s' },
-                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: 1500, defineLine: '#define FOCUS_STEPPER_SPEED              {0} // steps/s', additionalLines: ['#define FOCUS_UART_STEALTH_MODE          1 // silent?'] },
-                    { key: 'S', label: 'Microstepping setting', defaultValue: 16, defineLine: '#define FOCUS_MICROSTEPPING              {0} // steps' },
-                    { key: 'H', label: 'Hold current percentage (0 to power down)', defaultValue: 10, defineLine: '#define FOCUSER_MOTOR_HOLD_SETTING       {0} // %' },
+                    { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.focstpr}', defineLine: '#define FOCUS_MOTOR_CURRENT_RATING       {0} // mA' },
+                    { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.focstpr}', defineLine: '#define FOCUS_OPERATING_CURRENT_SETTING  {0} // %' },
+                    { key: 'S', label: 'Microstepping setting', defaultValue: '{Defaults.FocuserMicrostepping.focstpr}', defineLine: '#define FOCUS_MICROSTEPPING              {0} // steps' },
+                    { key: 'H', label: 'Hold current percentage (0 to power down)', defaultValue: 10, defineLine: '#define FOCUSER_MOTOR_HOLD_SETTING       {0} // %', additionalLines: ['#define FOCUS_UART_STEALTH_MODE          1 // silent?'] },
                 ]
             },
         },
-
-        // V1.9.11 and later ends //////////////////////////////////////
-
-
-        // V1.9.30 and later begins //////////////////////////////////////
+        {
+            id: 'FMS',
+            title: 'Focuser Motion Settings',
+            label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the Focuser stepper specs and desired settings:',
+            variable: 'focmotion',
+            condition: "$focuser == Y",
+            preamble: ['// Define some focuser stepper motor settings'],
+            define: '',
+            control: {
+                type: 'textinput',
+                choices: [
+                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: '{Defaults.Acceleration.focstpr}', defineLine: '#define FOCUS_STEPPER_ACCELERATION {0}' },
+                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: '{Defaults.Speed.focstpr}', defineLine: '#define FOCUS_STEPPER_SPEED {0}' },
+                ]
+            },
+        },
         {
             id: 'AP',
             title: 'Auto Polar Align',
             label: 'Do you have the AutoPA add on:',
-            variable: 'autopa930',
+            variable: 'autopa',
             preamble: ['////////////////////////////////', '// AutoPA Addon configuration ', '// Define whether we have the AutoPA add on or not. Currently: {v}'],
             define: '',
             control: {
                 type: 'radioimg',
                 choices: [
                     { key: 'N', value: 'No AutoPA', image: '/images/none.png', additionalLines: ['// No AutoPA settings'] },
-                    { key: 'L', value: 'Altitude stepper only', image: '/images/autopa_alt.png' },
-                    { key: 'Z', value: 'Azimuth stepper only', image: '/images/autopa_az.png' },
-                    { key: 'B', value: 'Full AutoPA is installed', image: '/images/autopa.png' },
+                    { key: 'Y', value: 'AutoPA is installed', image: '/images/autopa.png' },
                 ]
             },
         },
@@ -721,7 +777,7 @@ const WizardStep = (props) => {
             title: 'AutoPA Version',
             label: 'What version of AutoPA do you have installed:',
             variable: 'autopaversion',
-            condition: "$autopa930 IN [Z,L,B]",
+            condition: "$autopa == Y",
             preamble: ['// Using AutoPA {v}.'],
             define: '',
             control: {
@@ -736,16 +792,16 @@ const WizardStep = (props) => {
             id: 'ZS',
             title: 'Azimuth Stepper',
             label: 'Which stepper motor are you using for the Azimuth:',
-            variable: 'az930',
-            condition: "$autopa930 IN [Z,B]",
+            variable: 'az',
+            condition: "$autopa == Y",
             preamble: ['// Using the {v} stepper for AZ'],
             define: 'AZ_STEPPER_TYPE',
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'BM', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48mod.png', defineValue: 'STEPPER_TYPE_28BYJ48' },
-                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
-                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define AZ_STEPPER_SPR 200.0f'] },
+                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48mod.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define AZ_STEPPER_SPR 2048.0f'] },
+                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED' },
+                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define AZ_STEPPER_SPR 200.0f'] },
                 ]
             },
         },
@@ -753,8 +809,8 @@ const WizardStep = (props) => {
             id: 'ZD',
             title: 'Azimuth Driver',
             label: 'Which driver board are you using to drive the Azimuth stepper motor:',
-            variable: 'azdrv930',
-            condition: "($az930 == N9) OR ($az930 == N8) OR ($az930 == BM)",
+            variable: 'azdrv',
+            condition: "$autopa == Y",
             preamble: ['// Using the {v} driver for AZ stepper motor'],
             define: 'AZ_DRIVER_TYPE',
             control: {
@@ -770,16 +826,32 @@ const WizardStep = (props) => {
             id: 'ZA',
             title: 'Azimuth Advanced Settings',
             label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the AZ stepper specs and desired settings:',
-            variable: 'azpower930',
-            condition: "$azdrv930 == TU",
+            variable: 'azpower',
+            condition: "$azdrv == TU",
             preamble: ['// Define AZ stepper motor power settings'],
             define: '',
             control: {
                 type: 'textinput',
                 choices: [
-                    { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.az930}', defineLine: '#define AZ_MOTOR_CURRENT_RATING      {0} // mA' },
-                    { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.az930}', defineLine: '#define AZ_OPERATING_CURRENT_SETTING {0} // %' },
-                    { key: 'H', label: 'Hold current percentage (0 to power down)', defaultValue: '{Defaults.HoldPercentage.az930}', defineLine: '#define AZ_MOTOR_HOLD_SETTING        {0} // %' },
+                    { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.az}', defineLine: '#define AZ_MOTOR_CURRENT_RATING      {0} // mA' },
+                    { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.az}', defineLine: '#define AZ_OPERATING_CURRENT_SETTING {0} // %' },
+                    { key: 'H', label: 'Hold current percentage (0 to power down)', defaultValue: '{Defaults.HoldPercentage.az}', defineLine: '#define AZ_MOTOR_HOLD_SETTING        {0} // %' },
+                ]
+            },
+        },
+        {
+            id: 'ZAO',
+            title: 'Azimuth Always On',
+            label: 'It is possible to keep the azimuth motor energized at all times to prevent any shifting in position. This is not necessarily needed for 28BYJ motors, however it is recommended for NEMAs when using AutoPA V2.0.',
+            variable: 'azalwayson',
+            condition: "$autopa == Y",
+            preamble: ['// Define AZ always-on'],
+            define: 'AZ_ALWAYS_ON',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'Y', value: 'Yes', image: '/images/none.png', defineValue: '1' },
+                    { key: 'N', value: 'No', image: '/images/none.png', defineValue: '0' },
                 ]
             },
         },
@@ -787,17 +859,16 @@ const WizardStep = (props) => {
             id: 'LS',
             title: 'Altitude Stepper',
             label: 'Which stepper motor are you using for the Altitude:',
-            variable: 'alt930',
-            condition: "$autopa930 IN [L,B]",
+            variable: 'alt',
+            condition: "$autopa == Y",
             preamble: ['// Using the {v} stepper for ALT'],
             define: 'ALT_STEPPER_TYPE',
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'BY', value: '28BYJ-48', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_28BYJ48', additionalLines: ['#define ALT_DRIVER_TYPE DRIVER_TYPE_ULN2003'] },
-                    { key: 'BM', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48mod.png', defineValue: 'STEPPER_TYPE_28BYJ48' },
-                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17' },
-                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_NEMA17', additionalLines: ['#define ALT_STEPPER_SPR 200.0f'] },
+                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48mod.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define ALT_STEPPER_SPR 2048.0f'] },
+                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED' },
+                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define ALT_STEPPER_SPR 200.0f'] },
                 ]
             },
         },
@@ -805,8 +876,8 @@ const WizardStep = (props) => {
             id: 'LD',
             title: 'Altitude Driver',
             label: 'Which driver board are you using to drive the Altitude stepper motor:',
-            variable: 'altdrv930',
-            condition: "($alt930 == N9) OR ($alt930 == N8) OR ($alt930 == BM)",
+            variable: 'altdrv',
+            condition: "$autopa == Y",
             preamble: ['// Using the {v} driver for ALT stepper motor'],
             define: 'ALT_DRIVER_TYPE',
             control: {
@@ -822,21 +893,35 @@ const WizardStep = (props) => {
             id: 'LA',
             title: 'Altitude Advanced Settings',
             label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the ALT stepper specs and desired settings:',
-            variable: 'altpower930',
-            condition: "$altdrv930 == TU",
+            variable: 'altpower',
+            condition: "$altdrv == TU",
             preamble: ['// Define ALT stepper motor power settings'],
             define: '',
             control: {
                 type: 'textinput',
                 choices: [
-                    { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.alt930}', defineLine: '#define ALT_MOTOR_CURRENT_RATING      {0} // mA' },
-                    { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.alt930}', defineLine: '#define ALT_OPERATING_CURRENT_SETTING {0} // %' },
-                    { key: 'H', label: 'Hold current percentage (0 to power down)', defaultValue: '{Defaults.HoldPercentage.alt930}', defineLine: '#define ALT_MOTOR_HOLD_SETTING        {0} // %' },
+                    { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.alt}', defineLine: '#define ALT_MOTOR_CURRENT_RATING      {0} // mA' },
+                    { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.alt}', defineLine: '#define ALT_OPERATING_CURRENT_SETTING {0} // %' },
+                    { key: 'H', label: 'Hold current percentage (0 to power down)', defaultValue: '{Defaults.HoldPercentage.alt}', defineLine: '#define ALT_MOTOR_HOLD_SETTING        {0} // %' },
                 ]
             },
         },
-        // V1.9.30 ends //////////////////////////////////////
-
+        {
+            id: 'LAO',
+            title: 'Altitude Always On',
+            label: 'It is possible to keep the altitude motor energized at all times to prevent any shifting in position. This is usually not needed.',
+            variable: 'altalwayson',
+            condition: "$autopa == Y",
+            preamble: ['// Define ALT always-on'],
+            define: 'ALT_ALWAYS_ON',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'Y', value: 'Yes', image: '/images/none.png', defineValue: '1' },
+                    { key: 'N', value: 'No', image: '/images/none.png', defineValue: '0' },
+                ]
+            },
+        },
         {
             id: 'AH',
             title: 'RA Auto Home',
@@ -849,7 +934,7 @@ const WizardStep = (props) => {
                 condition: '$hallhome == 1',
                 literal: [
                     '',
-                    '// If your Hall sensor is not on the default pin (53 on MKS, 40 on Mega), uncomment and change the following line',
+                    '// If your Hall sensor is not on the default pin (53 on MKS & RAMPS), uncomment and change the following line',
                     '// #define RA_HOMING_SENSOR_PIN 53',
                 ]
             }
@@ -864,6 +949,50 @@ const WizardStep = (props) => {
         },
 
     ];
+
+    useEffect(() => {
+        const allVars = new Set()
+
+        for (let i = 0; i < stepProps.length; i++) {
+            // Check ID fields
+            for (let j = i + 1; j < stepProps.length; j++) {
+                if (!stepProps[i].id) {
+                    throw new WizardException("No ID for step " + i);
+                }
+                if (!stepProps[j].id) {
+                    throw new WizardException("No ID for step " + j);
+                }
+                if (stepProps[i].id === stepProps[j].id) {
+                    throw new WizardException("Duplicate ID '" + stepProps[i].id + "' for steps " + i + " and " + j);
+                }
+            }
+            if (!stepProps[i].variable) {
+                throw new WizardException("No variable defined in step " + i);
+            }
+            // Collect all variables
+            if (allVars.has(stepProps[i].variable)) {
+                throw new WizardException("Variable " + stepProps[i].variable + " defined twice. Second on in " + i);
+            }
+            allVars.add(stepProps[i].variable)
+        }
+
+        for (let i = 0; i < stepProps.length; i++) {
+            if (stepProps[i].condition) {
+                const expr = parseExpression(stepProps[i].condition)
+                if (typeof expr.lhs === 'string') {
+                    if (!allVars.has(expr.lhs)) {
+                        throw new WizardException("Step " + i + " has a condition referencing a variable named '" + expr.lhs + "' which does not exist.");
+                    }
+                }
+                else if (typeof expr.lhs.lhs === 'string') {
+                    if (!allVars.has(expr.lhs.lhs)) {
+                        throw new WizardException("Step " + i + " has a condition referencing a variable named '" + expr.lhs.lhs + "' which does not exist.");
+                    }
+                }
+                // console.log(expr)
+            }
+        }
+    }, [])
 
     if (stepIndex < 0) {
         return <div />
@@ -923,7 +1052,21 @@ const WizardStep = (props) => {
                     }
                 })
                 if (property.postamble) {
-
+                    const postLines = []
+                    property.postamble.forEach(entry => {
+                        let output = true
+                        if (entry.condition) {
+                            const expr = parseExpression(entry.condition)
+                            const exprResult = evaluateExpression(expr);
+                            if (exprResult.bool === false) {
+                                output = false
+                            }
+                        }
+                        if (output && entry.literal) {
+                            postLines.push(...entry.literal)
+                        }
+                    })
+                    defines = [...defines, ...postLines];
                 }
             }
             else {
@@ -943,9 +1086,13 @@ const WizardStep = (props) => {
                     property.postamble.forEach(entry => {
                         let output = true
                         if (entry.condition) {
-                            output = false
+                            const expr = parseExpression(entry.condition)
+                            const exprResult = evaluateExpression(expr);
+                            if (exprResult.bool === false) {
+                                output = false
+                            }
                         }
-                        if (entry.literal) {
+                        if (output && entry.literal) {
                             postLines.push(...entry.literal)
                         }
                     })
@@ -993,16 +1140,17 @@ const WizardStep = (props) => {
     } else {
         let control = null
         const stepControl = stepProps[stepIndex].control;
+        const controlKey = stepControl.type + "_" + stepIndex + "_"
         switch (stepControl.type) {
             case 'combo':
-                control = <Select onSelect={(e) => onSelect(stepIndex, e)}>
+                control = <Select key={controlKey} onSelect={(e) => onSelect(stepIndex, e)}>
                     {stepControl.choices.map((ch) => <Select.Option value={ch.key}>{ch.value}</Select.Option>)}
                 </Select>
 
                 break;
 
             case 'radio':
-                control = <Radio.Group onChange={(e) => onSelect(stepIndex, e.target.value)} buttonStyle='solid'>
+                control = <Radio.Group key={controlKey} onChange={(e) => onSelect(stepIndex, e.target.value)} buttonStyle='solid'>
                     {stepControl.choices.map((ch) => <Radio.Button value={ch.key}>{ch.value}</Radio.Button>)}
                 </Radio.Group>
 
@@ -1015,7 +1163,7 @@ const WizardStep = (props) => {
                     dataSource={stepControl.choices}
                     renderItem={item =>
                         <List.Item>
-                            <Button value={item.value} onClick={(e) => onSelect(stepIndex, item.key)} >{item.value}</Button>
+                            <Button key={controlKey} value={item.value} onClick={(e) => onSelect(stepIndex, item.key)} >{item.value}</Button>
                             <Image className='image-column' src={item.image} />
                         </List.Item>
                     }
@@ -1027,11 +1175,11 @@ const WizardStep = (props) => {
                 control = <>
                     {stepControl.choices.map(input =>
                         <div style={{ marginBottom: '10pt' }}>
-                            <Input addonBefore={input.label} placeholder={input.label} defaultValue={getDefaultValue(input.defaultValue)} onChange={(e) => onChangedText(stepIndex, input.key, e.target.value)} />
+                            <Input key={controlKey + input.key} addonBefore={input.label} placeholder={input.label} defaultValue={getDefaultValue(input.defaultValue)} onChange={(e) => onChangedText(stepIndex, input.key, e.target.value)} />
                         </div>
                     )}
                     <div className='back-button' >
-                        <Button value='OK' type='primary' onClick={(e) => onChangedText(stepIndex, '$OK')} >Next</Button>
+                        <Button key={controlKey + "ok"} value='OK' type='primary' onClick={(e) => onChangedText(stepIndex, '$OK')} >Next</Button>
                     </div>
                     <br></br>
                 </>
