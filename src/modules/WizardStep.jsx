@@ -286,7 +286,8 @@ const WizardStep = (props) => {
         {
             id: 'FW',
             title: 'Firmware',
-            label: 'Which firmware version are you planning to configure/build:',
+            label: 'This version of the Configurator only supports the current latest released version!',
+            // label: 'Which firmware version are you planning to configure/build:',
             variable: 'fwversion',
             preamble: [
                 '/////////////////////////////////////////////////////////////////////////////////////////////////////////',
@@ -297,7 +298,7 @@ const WizardStep = (props) => {
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'O', value: 'Latest Official (V1.10.0)', image: '/images/none.png', defineValue: '' },
+                    { key: 'O', value: 'Latest Official (V1.10.1)', image: '/images/none.png', defineValue: '' },
                     //{ key: 'B', value: 'Last Official to support 28NYJ-48 (V1.9.30)', image: '/images/none.png', defineValue: '' },
                     //{ key: 'D', value: 'Latest Develop (V1.10.3x)', image: '/images/none.png', defineValue: '' },
                 ]
@@ -323,7 +324,15 @@ const WizardStep = (props) => {
             label: 'Which microcontroller board are you using:',
             variable: 'board',
             preamble: ['// We are using the {v} board'],
-            define: 'BOARD',
+            postamble: [{
+                literal: [
+                    '#if defined(BOARD) && BOARD != {v}',
+                    '    #error Selected PIO environment does not match this configuration',
+                    '#else',
+                    '    #define BOARD {v}',
+                    '#endif']
+            }
+            ],
             control: {
                 type: 'radioimg',
                 choices: [
@@ -1093,7 +1102,7 @@ const WizardStep = (props) => {
                             }
                         }
                         if (output && entry.literal) {
-                            postLines.push(...entry.literal)
+                            postLines.push(...entry.literal.map(e => e.replace('{v}', propertyValue.defineValue)))
                         }
                     })
                     defines = [...defines, ...postLines];
