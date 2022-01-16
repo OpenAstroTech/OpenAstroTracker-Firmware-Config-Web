@@ -336,7 +336,7 @@ const WizardStep = (props) => {
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'M', value: 'RAMPS c/w ATMega 2560 (or clone)', image: '/images/mega2560.png', defineValue: 'BOARD_RAMPS' },
+                    { key: 'M', value: 'RAMPS c/w ATMega 2560 (or clone)', image: '/images/mega2560.png', defineValue: 'BOARD_AVR_RAMPS' },
                     { key: 'E', value: 'ESP32', image: '/images/esp32.png', defineValue: 'BOARD_ESP32_ESP32DEV' },
                     { key: 'M10', value: 'MKS GEN L V1.0', image: '/images/mksv10.png', defineValue: 'BOARD_AVR_MKS_GEN_L_V1' },
                     { key: 'M20', value: 'MKS GEN L V2.0', image: '/images/mksv20.png', defineValue: 'BOARD_AVR_MKS_GEN_L_V2' },
