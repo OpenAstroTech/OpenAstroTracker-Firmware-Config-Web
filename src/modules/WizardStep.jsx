@@ -298,7 +298,7 @@ const WizardStep = (props) => {
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'O', value: 'Latest Official (V1.10.1)', image: '/images/none.png', defineValue: '' },
+                    { key: 'O', value: 'Official Versions (V1.11.5 and later)', image: '/images/none.png', defineValue: '' },
                     //{ key: 'B', value: 'Last Official to support 28NYJ-48 (V1.9.30)', image: '/images/none.png', defineValue: '' },
                     //{ key: 'D', value: 'Latest Develop (V1.10.3x)', image: '/images/none.png', defineValue: '' },
                 ]
@@ -389,9 +389,9 @@ const WizardStep = (props) => {
                 choices: [
                     { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.rastpr}', defineLine: '#define RA_MOTOR_CURRENT_RATING       {0} // mA' },
                     { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.rastpr}', defineLine: '#define RA_OPERATING_CURRENT_SETTING  {0} // %' },
-                    { key: 'S', label: 'Microstepping while slewing', defaultValue: 8, defineLine: '#define RA_SLEW_MICROSTEPPING         {0}' },
+                    { key: 'S', label: 'Microstepping while slewing', defaultValue: 16, defineLine: '#define RA_SLEW_MICROSTEPPING         {0}' },
                     {
-                        key: 'T', label: 'Microstepping while tracking', defaultValue: 64, defineLine: '#define RA_TRACKING_MICROSTEPPING     {0}',
+                        key: 'T', label: 'Microstepping while tracking', defaultValue: 256, defineLine: '#define RA_TRACKING_MICROSTEPPING     {0}',
                         additionalLines: [
                             '',
                             '// TMC2209 Stealth Mode (spreadCycle) - When set to 0, tracking is more precise, but noisy (high-pitched sound). When set to 1, they are silent.',
@@ -416,6 +416,31 @@ const WizardStep = (props) => {
                 choices: [
                     { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: '{Defaults.Acceleration.rastpr}', defineLine: '#define RA_STEPPER_ACCELERATION {0}' },
                     { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: '{Defaults.Speed.rastpr}', defineLine: '#define RA_STEPPER_SPEED {0}' },
+                ]
+            },
+        },
+        {
+            id: 'RTR',
+            title: 'Tracking on boot',
+            label: 'Do you want the mount to start tracking after boot:',
+            variable: 'trackonboot',
+            preamble: ['// Track immediately after boot'],
+            postamble: [{
+                literal: [
+                    '',
+                    '// Define limits for RA... ',
+                    '#define RA_LIMIT_LEFT     5.5f',
+                    '#define RA_LIMIT_RIGHT    6.5f',
+                    '#define RA_TRACKING_LIMIT 6.75f // can\'t quite get to 7h...',
+                ]
+            }],
+
+            define: 'TRACK_ON_BOOT',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'Y', value: 'Yes, immediately start tracking', image: '/images/none.png', defineValue: '1' },
+                    { key: 'N', value: 'No, don\'t track until enabled', image: '/images/none.png', defineValue: '0' },
                 ]
             },
         },
@@ -483,7 +508,7 @@ const WizardStep = (props) => {
                     { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.decstpr}', defineLine: '#define DEC_OPERATING_CURRENT_SETTING  {0} // %' },
                     { key: 'S', label: 'Microstepping while slewing', defaultValue: 16, defineLine: '#define DEC_SLEW_MICROSTEPPING         {0}' },
                     {
-                        key: 'T', label: 'Microstepping while guiding', defaultValue: 64, defineLine: '#define DEC_GUIDE_MICROSTEPPING        {0}',
+                        key: 'T', label: 'Microstepping while guiding', defaultValue: 256, defineLine: '#define DEC_GUIDE_MICROSTEPPING        {0}',
                         additionalLines: [
                             '',
                             '// TMC2209 Stealth Mode (spreadCycle) - When set to 0, tracking is more precise, but noisy (high-pitched sound). When set to 1, they are silent.',
