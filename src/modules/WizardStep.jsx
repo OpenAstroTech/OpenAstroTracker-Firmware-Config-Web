@@ -869,7 +869,12 @@ const WizardStep = (props) => {
                 choices: [
                     { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.az}', defineLine: '#define AZ_MOTOR_CURRENT_RATING      {0} // mA' },
                     { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.az}', defineLine: '#define AZ_OPERATING_CURRENT_SETTING {0} // %' },
-                    { key: 'H', label: 'Hold current percentage (0 to power down)', defaultValue: '{Defaults.HoldPercentage.az}', defineLine: '#define AZ_MOTOR_HOLD_SETTING        {0} // %' },
+                    { key: 'H', label: 'Hold current percentage (0 to power down)', defaultValue: '{Defaults.HoldPercentage.az}', defineLine: '#define AZ_MOTOR_HOLD_SETTING        {0} // %',
+                    additionalLines: [
+                        '',
+                        '// Is it going the wrong way?',
+                        '#define AZ_INVERT_DIR 0'
+                    ]},
                 ]
             },
         },
@@ -936,7 +941,12 @@ const WizardStep = (props) => {
                 choices: [
                     { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.alt}', defineLine: '#define ALT_MOTOR_CURRENT_RATING      {0} // mA' },
                     { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.alt}', defineLine: '#define ALT_OPERATING_CURRENT_SETTING {0} // %' },
-                    { key: 'H', label: 'Hold current percentage (0 to power down)', defaultValue: '{Defaults.HoldPercentage.alt}', defineLine: '#define ALT_MOTOR_HOLD_SETTING        {0} // %' },
+                    { key: 'H', label: 'Hold current percentage (0 to power down)', defaultValue: '{Defaults.HoldPercentage.alt}', defineLine: '#define ALT_MOTOR_HOLD_SETTING        {0} // %',
+                    additionalLines: [
+                        '',
+                        '// Is it going the wrong way?',
+                        '#define ALT_INVERT_DIR 0'
+                    ]},
                 ]
             },
         },
