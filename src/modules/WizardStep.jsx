@@ -15,12 +15,20 @@ import { parseExpression } from './parser.js'
 const { Step } = Steps;
 
 const Defaults = {
-    PowerRating: { BY: 150, N9: 900, N8: 900, N49: 400, N48: 400 },
+    PowerRating: { BY: 150, N9: 1800, N8: 1800, N49: 400, N48: 400 },
     PowerUtilization: { BY: 100, N9: 90, N8: 90, N49: 90, N48: 90 },
     HoldPercentage: { BY: 0, N9: 10, N8: 10, N49: 10, N48: 10 },
     Speed: { BY: 400, N9: 1200, N8: 1200, N49: 1200, N48: 1200 },
     Acceleration: { BY: 600, N9: 3000, N8: 3000, N49: 3000, N48: 3000 },
+    RASlewMicrostepping: { BY: 1, N9: 8, N8: 16 },
+    RATrackMicrostepping: { BY: 1, N9: 256, N8: 256 },
+    DECSlewMicrostepping: { BY: 1, N9: 8, N8: 16 },
+    DECGuideMicrostepping: { BY: 1, N9: 256, N8: 256 },
     FocuserMicrostepping: { BY: 1, N9: 8, N8: 8, N49: 8, N48: 8 },
+    AZALTMicrostepping: { BY: 1, N9: 16, N8: 16 },
+    OAMSpeed: { N9: 2.0, N8: 2.0 },
+    OAMAcceleration: { N9: 2.0, N8: 2.0 },
+    OAMMicrostepping: { N9: 64, N8: 64 },
 }
 
 function WizardException(message) {
@@ -48,7 +56,7 @@ const WizardStep = (props) => {
     const getDefaultValue = (val) => {
         if (typeof val === 'string') {
             if (val.startsWith('{') && val.endsWith('}')) {
-                const words = val.substr(1, val.length - 2).split('.');
+                const words = val.substring(1, val.length - 1).split('.');
                 // console.log("Need default value for: " + val + ", Words are: ", words)
                 const config = configuration.find(v => v.variable === words[2])
                 // console.log("config is ", config)
@@ -132,13 +140,14 @@ const WizardStep = (props) => {
     const shouldSkipStep = (index) => {
         let startIndex = index;
         let skip = true;
-        // if (index < stepProps.length){
-        //     console.log(`Should we skip step ${index}: ${stepProps[index].variable}?`)
+        // if (index < stepProps.length) {
+        //     console.log(`* Should we skip step ${index}: ${stepProps[index].id} - ${stepProps[index].variable}?`)
         // }
         while (index < stepProps.length) {
             skip = false;
             let nextStep = stepProps[index];
             if (nextStep.condition) {
+                // console.log(`> Check ${nextStep.id}: Condition is [${nextStep.condition}]`)
                 const expr = parseExpression(nextStep.condition)
                 const exprResult = evaluateExpression(expr);
                 if (exprResult.status === 'skip') {
@@ -147,32 +156,30 @@ const WizardStep = (props) => {
                 else {
                     skip = !exprResult.bool;
                 }
+                // console.log(`> Evaluation result says: ${skip ? 'skip' : 'dont skip'}. ExprTree is:`, expr)
             }
-            else {
-                if (nextStep.condition) {
-                    let result = true;
-                    nextStep.condition.forEach(cond => {
-                        const neededKeys = cond.neededKeys.split(',');
-                        const conf = configuration.find(config => config.variable === cond.variable);
-                        if (!conf || (neededKeys.indexOf(conf.value) === -1)) {
-                            result = false;
-                        }
-                    });
-
-                    if (!result) {
-                        skip = true;
-                    }
-                }
+            if (nextStep.immediateValue && !configuration.find(c => c.variable === nextStep.variable)) {
+                let newConfiguration = configuration.filter(config => config.variable !== nextStep.variable)
+                newConfiguration = [...newConfiguration, { variable: nextStep.variable, value: nextStep.immediateValue }]
+                setConfiguration(newConfiguration);
+                skip = true;
             }
             if (!skip) {
+                // console.log(`*>Dont skip ${index}: ${stepProps[index].id} `)
                 return { skip: startIndex !== index, nextIndex: index, atEnd: false };
             }
             else {
+                // console.log('> Skipping to next')
                 index++;
             }
         }
 
         // console.log("Should we skip : " + (startIndex !== index))
+        // if (index >= stepProps.length) {
+        //     console.log(`*>Skipped to end`)
+        // } else {
+        //     console.log(`*>Skipped to ${index}: ${stepProps[index].id} `)
+        // }
 
         return { atEnd: index >= stepProps.length, skip: startIndex !== index, nextIndex: index };
     }
@@ -181,9 +188,11 @@ const WizardStep = (props) => {
         let nextStepIndex = stepIndex + 1;
         const newStepHistory = [...stepHistory, stepIndex];
         setStepHistory(newStepHistory);
-        // console.log("history:", newStepHistory);
+        // console.log(`Advancing from ${stepIndex}`);
 
         let res = shouldSkipStep(nextStepIndex);
+
+        // console.log(`Advancing from ${stepIndex} to ${res.nextIndex} -> ${stepProps[res.nextIndex].id}`);
         setStepIndex(res.nextIndex);
 
         if (res.atEnd) {
@@ -233,7 +242,21 @@ const WizardStep = (props) => {
 
     const onSelect = (index, e) => {
         let newConfiguration = configuration.filter(config => config.variable !== stepProps[index].variable)
-        newConfiguration = [...newConfiguration, { variable: stepProps[index].variable, value: e }]
+        let newVariables = [{ variable: stepProps[index].variable, value: e }]
+
+        const chosenOption = stepProps[index].control.choices.find(c => c.key === e);
+        if (chosenOption.additionalVariables) {
+            newVariables = [...newVariables, ...chosenOption.additionalVariables.map((vr) => {
+                const o = {}
+                const ov = Object.entries(vr)
+                o['variable'] = ov[0][0]
+                o['value'] = ov[0][1]
+                return o
+            })]
+        }
+        let newConfig = stepProps[index].control.choices.find((v) => { return { key: v.key, value: getDefaultValue(v.defaultValue) || '' } });
+
+        newConfiguration = [...newConfiguration, ...newVariables]
         setConfiguration(newConfiguration);
         setAdvanceStep(!advanceStep);
     }
@@ -250,7 +273,8 @@ const WizardStep = (props) => {
                 // console.log("Next step: ", prop)
                 let newConfig = prop.control.choices.map((v) => { return { key: v.key, value: getDefaultValue(v.defaultValue) || '' } });
                 let newConfiguration = configuration.filter(config => config.variable !== stepProps[index].variable);
-                newConfiguration = [...newConfiguration, { variable: prop.variable, value: newConfig }]
+                let newVariables = [{ variable: prop.variable, value: newConfig }]
+                newConfiguration = [...newConfiguration, ...newVariables]
                 setConfiguration(newConfiguration);
             }
 
@@ -284,23 +308,68 @@ const WizardStep = (props) => {
 
     const stepProps = [
         {
-            id: 'FW',
-            title: 'Firmware',
-            label: 'This version of the Configurator only supports the current latest released version!',
-            // label: 'Which firmware version are you planning to configure/build:',
-            variable: 'fwversion',
+            id: 'TR',
+            title: 'Tracker',
+            label: 'For which tracker do you want to generate firmware:',
+            variable: 'tracker',
             preamble: [
                 '/////////////////////////////////////////////////////////////////////////////////////////////////////////',
-                '// This configuration file was generated by the OAT Configurator at https://config.openastrotech.com for',
-                '// firmware {v}.',
-                '// Save this as Configuration_local.hpp in the folder where you placed the firmware code.'],
+                '// This configuration file was generated by the OAT/OAM Configurator at https://config.openastrotech.com',
+                '// and is for firmware to be used on a {v}.',
+                '// Save this as Configuration_local.hpp in the folder where you placed the firmware code.',
+                '/////////////////////////////////////////////////////////////////////////////////////////////////////////',
+                '/////////////////////////////////////////////////////////////////////////////////////////////////////////',
+            ],
             define: '',
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'O', value: 'Official Versions (V1.11.5 and later)', image: '/images/none.png', defineValue: '' },
+                    { key: 'OAT', value: 'OpenAstroTracker', image: '/images/oat.png', defineValue: '' },
+                    { key: 'OAM', value: 'OpenAstroMount', image: '/images/oam.png', defineLine: '#define OAM' }]
+            },
+        },
+        { // OAT
+            id: 'FWT',
+            title: 'Firmware',
+            label: 'Which firmware version are you planning to configure/build:',
+            variable: 'fwversion',
+            condition: "$tracker == OAT",
+            define: '',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    {
+                        key: 'L', value: 'Latest Version (V1.12.x)', image: '/images/none.png', defineValue: '', additionalLines: [
+                            '// Use the much higher stepper performance the new library.',
+                            '#define NEW_STEPPER_LIB'
+                        ]
+                    },
+                    { key: 'O', value: 'Official Versions (V1.11.x)', image: '/images/none.png', defineValue: '' },
                     //{ key: 'B', value: 'Last Official to support 28NYJ-48 (V1.9.30)', image: '/images/none.png', defineValue: '' },
                     //{ key: 'D', value: 'Latest Develop (V1.10.3x)', image: '/images/none.png', defineValue: '' },
+                ]
+            },
+        },
+        { // OAM
+            id: 'FWM',
+            title: 'Firmware',
+            label: 'You must use V1.12.x firmware on OAM:',
+            variable: 'fwversion',
+            condition: "$tracker == OAM",
+            define: '',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    {
+                        key: 'L', value: 'Latest Version (V1.12.x)', image: '/images/none.png', defineValue: '', additionalLines: [
+                            '// OAM requires the much higher stepper performance of the new stepper library.',
+                            '#define NEW_STEPPER_LIB'
+                        ],
+                        additionalVariables: [{ 'autopa': 'Y' }, { 'autopaversion': '2' }]
+                    },
+                    // { key: 'O', value: 'Official Versions (V1.11.x)', image: '/images/none.png', defineValue: '' },
+                    // { key: 'B', value: 'Last Official to support 28NYJ-48 (V1.9.30)', image: '/images/none.png', defineValue: '' },
+                    // { key: 'D', value: 'Latest Develop (V1.10.3x)', image: '/images/none.png', defineValue: '' },
                 ]
             },
         },
@@ -344,10 +413,11 @@ const WizardStep = (props) => {
                 ]
             },
         },
-        {
-            id: 'RS',
+        { // OAT
+            id: 'RST',
             title: 'RA Stepper',
             label: 'Which stepper motor are you using for RA:',
+            condition: "$tracker == OAT",
             variable: 'rastpr',
             preamble: ['////////////////////////////////', '// RA Stepper configuration ', '// See supported stepper values. Change according to the steppers you are using', '// Using the {v} stepper for RA'],
             define: 'RA_STEPPER_TYPE',
@@ -360,11 +430,42 @@ const WizardStep = (props) => {
                 ]
             },
         },
-        {
-            id: 'RD',
+        { // OAM
+            id: 'RSM',
+            title: 'RA Stepper',
+            label: 'Which stepper motor are you using for RA:',
+            condition: "$tracker == OAM",
+            variable: 'rastpr',
+            preamble: ['////////////////////////////////', '// RA Stepper configuration (OAM)', '// See supported stepper values. Change according to the steppers you are using', '// Using the {v} stepper for RA'],
+            postamble: [{
+                literal: [
+                ]
+            }],
+            define: 'RA_STEPPER_TYPE',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    {
+                        key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE',
+                        additionalLines: [
+                            '#define RA_STEPPER_SPR                 (400 * 9)',
+                        ]
+                    },
+                    {
+                        key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE',
+                        additionalLines: [
+                            '#define RA_STEPPER_SPR                 (200 * 9)',
+                        ]
+                    },
+                ]
+            },
+        },
+        { // OAT
+            id: 'RDO',
             title: 'RA Driver',
             label: 'Which driver board are you using to drive the RA stepper motor:',
             variable: 'radrv',
+            condition: "$tracker == OAT",
             preamble: ['// Using the {v} driver for RA stepper motor'],
             define: 'RA_DRIVER_TYPE',
             control: {
@@ -376,12 +477,59 @@ const WizardStep = (props) => {
                 ]
             },
         },
-        {
-            id: 'RA',
+        { // OAM - No support for A4988
+            id: 'RDM',
+            title: 'RA Driver',
+            label: 'Which driver board are you using to drive the RA stepper motor:',
+            variable: 'radrv',
+            condition: "$tracker == OAM",
+            preamble: ['// Using the {v} driver for RA stepper motor'],
+            define: 'RA_DRIVER_TYPE',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'TU', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
+                    { key: 'TS', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
+                ]
+            },
+        },
+        { // OAT
+            id: 'RAT',
             title: 'RA Advanced Settings',
             label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the RA stepper specs and desired settings:',
             variable: 'rapower',
-            condition: "$radrv == TU",
+            condition: "($radrv == TU) AND ($tracker == OAT)",
+            preamble: ['// Define some RA stepper motor settings'],
+            define: '',
+            control: {
+                type: 'textinput',
+                choices: [
+                    { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.rastpr}', defineLine: '#define RA_MOTOR_CURRENT_RATING        {0} // mA' },
+                    { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.rastpr}', defineLine: '#define RA_OPERATING_CURRENT_SETTING   {0} // %' },
+                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: '{Defaults.Acceleration.rastpr}', defineLine: '#define RA_STEPPER_ACCELERATION        {0}' },
+                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: '{Defaults.Speed.rastpr}', defineLine: '#define RA_STEPPER_SPEED               {0}' },
+                    { key: 'S', label: 'Microstepping while slewing', defaultValue: '{Defaults.RASlewMicrostepping.rastpr}', defineLine: '#define RA_SLEW_MICROSTEPPING          {0}' },
+                    { key: 'T', label: 'Microstepping while tracking', defaultValue: '{Defaults.RATrackMicrostepping.rastpr}', defineLine: '#define RA_TRACKING_MICROSTEPPING      {0}' },
+                ]
+            },
+            postamble: [{
+                literal: [
+                    '',
+                    '// TMC2209 Stealth Mode (spreadCycle) - When set to 0, tracking is more precise, but noisy (high-pitched sound). When set to 1, they are silent.',
+                    '#define RA_UART_STEALTH_MODE          0',
+                    '',
+                    '// Is it going the wrong way?',
+                    '#define RA_INVERT_DIR  0'
+                ]
+            }
+            ]
+        },
+        { // OAM
+            id: 'RAM',
+            title: 'RA Advanced Settings',
+            label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the RA stepper specs and desired settings:',
+            variable: 'rapower',
+            condition: "($radrv == TU) AND ($tracker == OAM)",
             preamble: ['// Define some RA stepper motor settings'],
             define: '',
             control: {
@@ -389,35 +537,22 @@ const WizardStep = (props) => {
                 choices: [
                     { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.rastpr}', defineLine: '#define RA_MOTOR_CURRENT_RATING       {0} // mA' },
                     { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.rastpr}', defineLine: '#define RA_OPERATING_CURRENT_SETTING  {0} // %' },
-                    { key: 'S', label: 'Microstepping while slewing', defaultValue: 16, defineLine: '#define RA_SLEW_MICROSTEPPING         {0}' },
-                    {
-                        key: 'T', label: 'Microstepping while tracking', defaultValue: 256, defineLine: '#define RA_TRACKING_MICROSTEPPING     {0}',
-                        additionalLines: [
-                            '',
-                            '// TMC2209 Stealth Mode (spreadCycle) - When set to 0, tracking is more precise, but noisy (high-pitched sound). When set to 1, they are silent.',
-                            '#define RA_UART_STEALTH_MODE          0',
-                            '',
-                            '// Is it going the wrong way?',
-                            '#define RA_INVERT_DIR  0'
-                        ]
-                    },
+                    { key: 'A', label: 'Acceleration (deg/s/s)', defaultValue: '{Defaults.OAMAcceleration.rastpr}', defineLine: '#define RA_SLEWING_ACCELERATION_DEG   {0}' },
+                    { key: 'V', label: 'Maximum Speed (deg/s)', defaultValue: '{Defaults.OAMSpeed.rastpr}', defineLine: '#define RA_SLEWING_SPEED_DEG          {0}' },
+                    { key: 'S', label: 'Microstepping setting', defaultValue: '{Defaults.OAMMicrostepping.rastpr}', defineLine: '#define RA_SLEW_MICROSTEPPING         {0}\n#define RA_TRACKING_MICROSTEPPING     {0}' },
                 ]
             },
-        },
-        {
-            id: 'RMS',
-            title: 'RA Motion Settings',
-            label: 'These are some advanced settings for stepper speed you may want to override. The defaults are set already, please only change them if you are sure what they do and what their valid ranges are.',
-            variable: 'ramotion',
-            preamble: ['// Define some RA stepper motor settings'],
-            define: '',
-            control: {
-                type: 'textinput',
-                choices: [
-                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: '{Defaults.Acceleration.rastpr}', defineLine: '#define RA_STEPPER_ACCELERATION {0}' },
-                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: '{Defaults.Speed.rastpr}', defineLine: '#define RA_STEPPER_SPEED {0}' },
+            postamble: [{
+                literal: [
+                    '',
+                    '// TMC2209 Stealth Mode (spreadCycle) - When set to 0, tracking is more precise, but noisy (high-pitched sound). When set to 1, they are silent.',
+                    '#define RA_UART_STEALTH_MODE          0',
+                    '',
+                    '// Is it going the wrong way?',
+                    '#define RA_INVERT_DIR  0'
                 ]
-            },
+            }
+            ]
         },
         {
             id: 'RTR',
@@ -459,11 +594,12 @@ const WizardStep = (props) => {
                 ]
             },
         },
-        {
-            id: 'DS',
+        { // OAT
+            id: 'DST',
             title: 'DEC Stepper',
             label: 'Which stepper motor are you using for DEC:',
             variable: 'decstpr',
+            condition: "$tracker == OAT",
             preamble: ['////////////////////////////////', '// DEC Stepper configuration ', '// See supported stepper values. Change according to the steppers you are using', '// Using the {v} stepper for DEC'],
             define: 'DEC_STEPPER_TYPE',
             control: {
@@ -477,11 +613,44 @@ const WizardStep = (props) => {
                 ]
             },
         },
-        {
-            id: 'DD',
+        { // OAM
+            id: 'DSM',
+            title: 'DEC Stepper',
+            label: 'Which stepper motor are you using for DEC:',
+            variable: 'decstpr',
+            condition: "$tracker == OAM",
+            preamble: ['////////////////////////////////', '// DEC Stepper configuration ', '// See supported stepper values. Change according to the steppers you are using', '// Using the {v} stepper for DEC'],
+            postamble: [{
+                literal: [
+                    '#define DEC_WHEEL_CIRCUMFERENCE        816.814f',
+                ]
+            }
+            ],
+            define: 'DEC_STEPPER_TYPE',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    {
+                        key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE',
+                        additionalLines: [
+                            '#define DEC_STEPPER_SPR                (400 * 9)',
+                        ]
+                    },
+                    {
+                        key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE',
+                        additionalLines: [
+                            '#define DEC_STEPPER_SPR                (200 * 9)',
+                        ]
+                    },
+                ]
+            },
+        },
+        { // OAT
+            id: 'DDT',
             title: 'DEC Driver',
             label: 'Which driver board are you using to drive the DEC stepper motor:',
             variable: 'decdrv',
+            condition: "$tracker == OAT",
             preamble: ['// Using the {v} driver for DEC stepper'],
             define: 'DEC_DRIVER_TYPE',
             control: {
@@ -493,12 +662,28 @@ const WizardStep = (props) => {
                 ]
             },
         },
-        {
-            id: 'DA',
+        { //OAM - No A4988
+            id: 'DDM',
+            title: 'DEC Driver',
+            label: 'Which driver board are you using to drive the DEC stepper motor:',
+            variable: 'decdrv',
+            condition: "$tracker == OAM",
+            preamble: ['// Using the {v} driver for DEC stepper'],
+            define: 'DEC_DRIVER_TYPE',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'TU', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
+                    { key: 'TS', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
+                ]
+            },
+        },
+        { // OAT
+            id: 'DAT',
             title: 'DEC Advanced Settings',
             label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the DEC stepper specs and desired settings:',
             variable: 'decpower',
-            condition: "$decdrv == TU",
+            condition: "($decdrv == TU) AND ($tracker == OAT)",
             preamble: ['// Define some DEC stepper motor settings'],
             define: '',
             control: {
@@ -506,35 +691,53 @@ const WizardStep = (props) => {
                 choices: [
                     { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.decstpr}', defineLine: '#define DEC_MOTOR_CURRENT_RATING       {0} // mA' },
                     { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.decstpr}', defineLine: '#define DEC_OPERATING_CURRENT_SETTING  {0} // %' },
-                    { key: 'S', label: 'Microstepping while slewing', defaultValue: 16, defineLine: '#define DEC_SLEW_MICROSTEPPING         {0}' },
-                    {
-                        key: 'T', label: 'Microstepping while guiding', defaultValue: 256, defineLine: '#define DEC_GUIDE_MICROSTEPPING        {0}',
-                        additionalLines: [
-                            '',
-                            '// TMC2209 Stealth Mode (spreadCycle) - When set to 0, tracking is more precise, but noisy (high-pitched sound). When set to 1, they are silent.',
-                            '#define DEC_UART_STEALTH_MODE          0',
-                            '',
-                            '// Is it going the wrong way?',
-                            '#define DEC_INVERT_DIR  0'
-                        ]
-                    },
+                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: '{Defaults.Acceleration.decstpr}', defineLine: '#define DEC_STEPPER_ACCELERATION       {0}' },
+                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: '{Defaults.Speed.decstpr}', defineLine: '#define DEC_STEPPER_SPEED              {0}' },
+                    { key: 'S', label: 'Microstepping while slewing', defaultValue: '{Defaults.DECSlewMicrostepping.decstpr}', defineLine: '#define DEC_SLEW_MICROSTEPPING         {0}' },
+                    { key: 'T', label: 'Microstepping while guiding', defaultValue: '{Defaults.DECGuideMicrostepping.decstpr}', defineLine: '#define DEC_GUIDE_MICROSTEPPING        {0}' },
                 ]
             },
+            postamble: [{
+                literal: [
+                    '',
+                    '// TMC2209 Stealth Mode (spreadCycle) - When set to 0, tracking is more precise, but noisy (high-pitched sound). When set to 1, they are silent.',
+                    '#define DEC_UART_STEALTH_MODE          0',
+                    '',
+                    '// Is it going the wrong way?',
+                    '#define DEC_INVERT_DIR  0'
+                ]
+            }
+            ]
         },
-        {
-            id: 'DMS',
-            title: 'DEC Motion Settings',
+        {// OAM
+            id: 'DAM',
+            title: 'DEC Advanced Settings',
             label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the DEC stepper specs and desired settings:',
-            variable: 'decmotion',
+            variable: 'decpower',
+            condition: "($decdrv == TU) AND ($tracker == OAM)",
             preamble: ['// Define some DEC stepper motor settings'],
             define: '',
             control: {
                 type: 'textinput',
                 choices: [
-                    { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: '{Defaults.Acceleration.decstpr}', defineLine: '#define DEC_STEPPER_ACCELERATION {0}' },
-                    { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: '{Defaults.Speed.decstpr}', defineLine: '#define DEC_STEPPER_SPEED {0}' },
+                    { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.decstpr}', defineLine: '#define DEC_MOTOR_CURRENT_RATING       {0} // mA' },
+                    { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.decstpr}', defineLine: '#define DEC_OPERATING_CURRENT_SETTING  {0} // %' },
+                    { key: 'A', label: 'Acceleration (deg/s/s)', defaultValue: '{Defaults.OAMAcceleration.decstpr}', defineLine: '#define DEC_SLEWING_ACCELERATION_DEG   {0}' },
+                    { key: 'V', label: 'Maximum Speed (deg/s)', defaultValue: '{Defaults.OAMSpeed.decstpr}', defineLine: '#define DEC_SLEWING_SPEED_DEG          {0}' },
+                    { key: 'S', label: 'Microstepping setting', defaultValue: '{Defaults.OAMMicrostepping.decstpr}', defineLine: '#define DEC_SLEW_MICROSTEPPING         {0}\n#define DEC_GUIDE_MICROSTEPPING        {0}' },
                 ]
             },
+            postamble: [{
+                literal: [
+                    '',
+                    '// TMC2209 Stealth Mode (spreadCycle) - When set to 0, guiding is more precise, but noisy (high-pitched sound). When set to 1, they are silent.',
+                    '#define DEC_UART_STEALTH_MODE          0',
+                    '',
+                    '// Is it going the wrong way?',
+                    '#define DEC_INVERT_DIR  0'
+                ]
+            }
+            ]
         },
         {
             id: 'DT',
@@ -658,6 +861,7 @@ const WizardStep = (props) => {
             title: 'GPS',
             label: 'Do you have the GPS add on:',
             variable: 'gps',
+            condition: "$tracker == OAT",
             preamble: ['////////////////////////////////', '// GPS Addon configuration ', '// Define whether we have the GPS addon or not. Currently: {v}'],
             define: 'USE_GPS',
             control: {
@@ -675,7 +879,7 @@ const WizardStep = (props) => {
             label: 'Do you have the Digital Level add on:',
             variable: 'gyro',
             preamble: ['////////////////////////////////', '// Digital Level Addon configuration ', '// Define whether we have the Digital Level or not. Currently: {v}'],
-            condition: "$board == M",
+            condition: "($board == M) AND ($tracker == OAT)",
             define: 'USE_GYRO_LEVEL',
             control: {
                 type: 'radioimg',
@@ -693,7 +897,7 @@ const WizardStep = (props) => {
             label: 'Do you have the Digital Level add on:',
             variable: 'gyromks',
             preamble: ['////////////////////////////////', '// Digital Level Addon configuration ', '// Define whether we have the Digital Level or not. Currently: {v}'],
-            condition: "$board == M21",
+            condition: "($board == M21) AND ($tracker == OAT)",
             define: 'USE_GYRO_LEVEL',
             control: {
                 type: 'radioimg',
@@ -791,11 +995,13 @@ const WizardStep = (props) => {
                 ]
             },
         },
+        ///////////////// AUTO PA
         {
-            id: 'AP',
+            id: 'APT',
             title: 'Auto Polar Align',
             label: 'Do you have the AutoPA add on:',
             variable: 'autopa',
+            condition: "$tracker == OAT",
             preamble: ['////////////////////////////////', '// AutoPA Addon configuration ', '// Define whether we have the AutoPA add on or not. Currently: {v}'],
             define: '',
             control: {
@@ -811,7 +1017,7 @@ const WizardStep = (props) => {
             title: 'AutoPA Version',
             label: 'What version of AutoPA do you have installed:',
             variable: 'autopaversion',
-            condition: "$autopa == Y",
+            condition: "($autopa == Y) AND ($tracker == OAT)",
             preamble: ['// Using AutoPA {v}.'],
             define: '',
             control: {
@@ -822,12 +1028,12 @@ const WizardStep = (props) => {
                 ]
             },
         },
-        {
-            id: 'ZS',
+        { // OAT
+            id: 'ZST',
             title: 'Azimuth Stepper',
             label: 'Which stepper motor are you using for the Azimuth:',
             variable: 'az',
-            condition: "$autopa == Y",
+            condition: "($autopa == Y) AND ($tracker == OAT)",
             preamble: ['// Using the {v} stepper for AZ'],
             define: 'AZ_STEPPER_TYPE',
             control: {
@@ -839,18 +1045,50 @@ const WizardStep = (props) => {
                 ]
             },
         },
-        {
-            id: 'ZD',
+        { // OAM
+            id: 'ZSM',
+            title: 'Azimuth Stepper',
+            label: 'Which stepper motor are you using for the Azimuth:',
+            variable: 'az',
+            condition: "($autopa == Y) AND ($tracker == OAM)",
+            preamble: ['// Using the {v} stepper for AZ'],
+            define: 'AZ_STEPPER_TYPE',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED' },
+                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define AZ_STEPPER_SPR 200.0f'] },
+                ]
+            },
+        },
+        { // OAT
+            id: 'ZDT',
             title: 'Azimuth Driver',
             label: 'Which driver board are you using to drive the Azimuth stepper motor:',
             variable: 'azdrv',
-            condition: "$autopa == Y",
+            condition: "($autopa == Y) AND ($tracker == OAT)",
             preamble: ['// Using the {v} driver for AZ stepper motor'],
             define: 'AZ_DRIVER_TYPE',
             control: {
                 type: 'radioimg',
                 choices: [
                     { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
+                    { key: 'TU', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
+                    { key: 'TS', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
+                ]
+            },
+        },
+        { // OAM
+            id: 'ZDM',
+            title: 'Azimuth Driver',
+            label: 'Which driver board are you using to drive the Azimuth stepper motor:',
+            variable: 'azdrv',
+            condition: "($autopa == Y) AND ($tracker == OAM)",
+            preamble: ['// Using the {v} driver for AZ stepper motor'],
+            define: 'AZ_DRIVER_TYPE',
+            control: {
+                type: 'radioimg',
+                choices: [
                     { key: 'TU', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
                     { key: 'TS', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
                 ]
@@ -863,18 +1101,39 @@ const WizardStep = (props) => {
             variable: 'azpower',
             condition: "$azdrv == TU",
             preamble: ['// Define AZ stepper motor power settings'],
+            postamble: [{
+                literal: [
+                    '#define AZ_STEPPER_SPEED             1000',
+                    '#define AZ_STEPPER_ACCELERATION      500',
+                    '',
+                    '',
+                    '///////////////////////////////',
+                    '// AZ parameters will require tuning according to your setup',
+                    '',
+                    '// If you have a custom solution involving a rod you can uncomment and use the next 3 lines for calculations',
+                    '// #define AZ_CIRCUMFERENCE        (115 * 2 * 3.1515927) // the circumference of the circle where the movement is anchored',
+                    '// #define AZ_ROD_PITCH            1.0f                  // mm per full rev of stepper',
+                    '// #define AZIMUTH_STEPS_PER_REV   (AZ_CIRCUMFERENCE / AZ_ROD_PITCH * AZ_STEPPER_SPR * AZ_MICROSTEPPING)  // Steps needed to turn AZ 360deg',
+                    '',
+                    '// If you have a belt drive solution, you can uncomment and use the next 2 lines for calculations',
+                    '// #define AZ_CIRCUMFERENCE        (725)  // the circumference of the circle where the movement is anchored',
+                    '// #define AZ_PULLEY_TEETH         16',
+                    '',
+                    '// Should AZ motor stay energized?',
+                    '#define AZ_ALWAYS_ON  1',
+                    '',
+                    '// Is it going the wrong way?',
+                    '#define AZ_INVERT_DIR 0'
+                ]
+            }],
             define: '',
             control: {
                 type: 'textinput',
                 choices: [
                     { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.az}', defineLine: '#define AZ_MOTOR_CURRENT_RATING      {0} // mA' },
                     { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.az}', defineLine: '#define AZ_OPERATING_CURRENT_SETTING {0} // %' },
-                    { key: 'H', label: 'Hold current percentage (0 to power down)', defaultValue: '{Defaults.HoldPercentage.az}', defineLine: '#define AZ_MOTOR_HOLD_SETTING        {0} // %',
-                    additionalLines: [
-                        '',
-                        '// Is it going the wrong way?',
-                        '#define AZ_INVERT_DIR 0'
-                    ]},
+                    { key: 'S', label: 'Microstepping setting', defaultValue: '{Defaults.AZALTMicrostepping.az}', defineLine: '#define AZ_MICROSTEPPING             {0} // steps' },
+                    { key: 'H', label: 'Hold current percentage (0 to power down)', defaultValue: '{Defaults.HoldPercentage.az}', defineLine: '#define AZ_MOTOR_HOLD_SETTING        {0} // %' },
                 ]
             },
         },
@@ -883,7 +1142,7 @@ const WizardStep = (props) => {
             title: 'Azimuth Always On',
             label: 'It is possible to keep the azimuth motor energized at all times to prevent any shifting in position. This is not necessarily needed for 28BYJ motors, however it is recommended for NEMAs when using AutoPA V2.0.',
             variable: 'azalwayson',
-            condition: "$autopa == Y",
+            condition: "($autopa == Y) AND ($tracker == OAT)",
             preamble: ['// Define AZ always-on'],
             define: 'AZ_ALWAYS_ON',
             control: {
@@ -894,12 +1153,12 @@ const WizardStep = (props) => {
                 ]
             },
         },
-        {
-            id: 'LS',
+        { // OAT
+            id: 'LST',
             title: 'Altitude Stepper',
             label: 'Which stepper motor are you using for the Altitude:',
             variable: 'alt',
-            condition: "$autopa == Y",
+            condition: "($autopa == Y) AND ($tracker == OAT)",
             preamble: ['// Using the {v} stepper for ALT'],
             define: 'ALT_STEPPER_TYPE',
             control: {
@@ -911,18 +1170,50 @@ const WizardStep = (props) => {
                 ]
             },
         },
-        {
-            id: 'LD',
+        { // OAM
+            id: 'LSM',
+            title: 'Altitude Stepper',
+            label: 'Which stepper motor are you using for the Altitude:',
+            variable: 'alt',
+            condition: "($autopa == Y) AND ($tracker == OAM)",
+            preamble: ['// Using the {v} stepper for ALT'],
+            define: 'ALT_STEPPER_TYPE',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED' },
+                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define ALT_STEPPER_SPR 200.0f'] },
+                ]
+            },
+        },
+        { // OAT
+            id: 'LDT',
             title: 'Altitude Driver',
             label: 'Which driver board are you using to drive the Altitude stepper motor:',
             variable: 'altdrv',
-            condition: "$autopa == Y",
+            condition: "($autopa == Y) AND ($tracker == OAT)",
             preamble: ['// Using the {v} driver for ALT stepper motor'],
             define: 'ALT_DRIVER_TYPE',
             control: {
                 type: 'radioimg',
                 choices: [
                     { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
+                    { key: 'TU', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
+                    { key: 'TS', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
+                ]
+            },
+        },
+        { // OAM
+            id: 'LDM',
+            title: 'Altitude Driver',
+            label: 'Which driver board are you using to drive the Altitude stepper motor:',
+            variable: 'altdrv',
+            condition: "($autopa == Y) AND ($tracker == OAM)",
+            preamble: ['// Using the {v} driver for ALT stepper motor'],
+            define: 'ALT_DRIVER_TYPE',
+            control: {
+                type: 'radioimg',
+                choices: [
                     { key: 'TU', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
                     { key: 'TS', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
                 ]
@@ -941,21 +1232,33 @@ const WizardStep = (props) => {
                 choices: [
                     { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.alt}', defineLine: '#define ALT_MOTOR_CURRENT_RATING      {0} // mA' },
                     { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.alt}', defineLine: '#define ALT_OPERATING_CURRENT_SETTING {0} // %' },
-                    { key: 'H', label: 'Hold current percentage (0 to power down)', defaultValue: '{Defaults.HoldPercentage.alt}', defineLine: '#define ALT_MOTOR_HOLD_SETTING        {0} // %',
-                    additionalLines: [
-                        '',
-                        '// Is it going the wrong way?',
-                        '#define ALT_INVERT_DIR 0'
-                    ]},
+                    { key: 'S', label: 'Microstepping setting', defaultValue: '{Defaults.AZALTMicrostepping.alt}', defineLine: '#define ALT_MICROSTEPPING             {0} // steps' },
+                    { key: 'H', label: 'Hold current percentage (0 to power down)', defaultValue: '{Defaults.HoldPercentage.alt}', defineLine: '#define ALT_MOTOR_HOLD_SETTING        {0} // %' },
                 ]
             },
+            postamble: [{
+                condition: '$tracker == OAM',
+                literal: [
+                    '#define ALT_STEPPER_SPEED             3000',
+                    '#define ALT_STEPPER_ACCELERATION      1000',
+                    '',
+                    '///////////////////////////////',
+                    '// ALT parameters are for hardware as designed',
+                    '#define ALT_MICROSTEPPING              64',
+                    '#define ALTITUDE_STEPS_PER_ARC_MINUTE  ((1640 / 60) * ALT_MICROSTEPPING)',
+                    '',
+                    '// Is it going the wrong way?',
+                    '#define ALT_INVERT_DIR 0'
+                ]
+            }
+            ]
         },
         {
             id: 'LAO',
             title: 'Altitude Always On',
             label: 'It is possible to keep the altitude motor energized at all times to prevent any shifting in position. This is usually not needed.',
             variable: 'altalwayson',
-            condition: "$autopa == Y",
+            condition: "($autopa == Y) AND ($tracker == OAT)",
             preamble: ['// Define ALT always-on'],
             define: 'ALT_ALWAYS_ON',
             control: {
@@ -966,28 +1269,128 @@ const WizardStep = (props) => {
                 ]
             },
         },
+        //////////////////// HALL Sensors ///////////////////////////
         {
-            id: 'AH',
-            title: 'RA Auto Home',
-            label: 'Do you have the Hall sensor-based RA AutoHome add on:',
-            variable: 'hallhome',
+            id: 'RAH',
+            title: 'RA Auto Home via Hall sensors',
+            label: 'Do you have the Hall sensor-based AutoHome add ons installed on the RA axis:',
+            variable: 'hallhomera',
             condition: "$board IN [M,M21]",
-            preamble: ['////////////////////////////////', '// Is the RA Auto Home addon installed'],
+            preamble: ['////////////////////////////////', '// Auto Homing addons'],
             define: 'USE_HALL_SENSOR_RA_AUTOHOME',
-            postamble: [{
-                condition: '$hallhome == 1',
-                literal: [
-                    '',
-                    '// If your Hall sensor is not on the default pin (53 on MKS & RAMPS), uncomment and change the following line',
-                    '// #define RA_HOMING_SENSOR_PIN 53',
-                ]
-            }
-            ],
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'N', value: 'No Hall sensor homing', image: '/images/none.png', defineValue: '0' },
+                    { key: 'N', value: 'No RA Hall sensor homing', image: '/images/none.png', defineValue: '0' },
                     { key: 'Y', value: 'RA Homing Hall sensor installed', image: '/images/none.png', defineValue: '1' },
+                ]
+            },
+        },
+        {
+            id: 'RAHA',
+            title: 'RA Auto Home Settings',
+            label: 'What settings would you like to use for the RA homing sensor:',
+            variable: 'hallhomerasettings',
+            condition: "$hallhomera == Y",
+            define: '',
+            control: {
+                type: 'textinput',
+                choices: [
+                    { key: 'P', label: 'Pin that sensor is attached to', defaultValue: '27', defineLine: '#define RA_HOMING_SENSOR_PIN            {0}' },
+                    { key: 'S', label: 'Number of degrees to search for sensor', defaultValue: '10', defineLine: '#define RA_HOMING_SENSOR_SEARCH_DEGREES {0}' },
+                ]
+            },
+        },
+        {
+            id: 'DAH',
+            title: 'DEC Auto Home via Hall sensors',
+            label: 'Do you have the Hall sensor-based AutoHome add ons installed on the DEC axis:',
+            variable: 'hallhomedec',
+            condition: "$board IN [M,M21]",
+            define: 'USE_HALL_SENSOR_DEC_AUTOHOME',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'N', value: 'No DEC Hall sensor homing', image: '/images/none.png', defineValue: '0' },
+                    { key: 'Y', value: 'DEC Homing Hall sensor installed', image: '/images/none.png', defineValue: '1' },
+                ]
+            },
+        },
+        {
+            id: 'DAHA',
+            title: 'DEC Auto Home Settings',
+            label: 'What settings would you like to use for the DEC homing sensor:',
+            variable: 'hallhomedecsettings',
+            condition: "$hallhomedec == Y",
+            define: '',
+            control: {
+                type: 'textinput',
+                choices: [
+                    { key: 'P', label: 'Pin that sensor is attached to', defaultValue: '29', defineLine: '#define DEC_HOMING_SENSOR_PIN            {0}' },
+                    { key: 'S', label: 'Number of degrees to search for sensor', defaultValue: '10', defineLine: '#define DEC_HOMING_SENSOR_SEARCH_DEGREES {0}' },
+                ]
+            },
+        },
+        { // OAM
+            id: 'RESM',
+            title: 'RA End switches',
+            label: 'Do you have end switches installed on the RA axis:',
+            variable: 'endswra',
+            preamble: ['////////////////////////////////', '// End Switch addons'],
+            condition: "$tracker == OAM",
+            define: 'USE_RA_END_SWITCH',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'N', value: 'No RA end switches installed', image: '/images/none.png', defineValue: '0' },
+                    { key: 'Y', value: 'RA end switches are installed', image: '/images/none.png', defineValue: '1' },
+                ]
+            },
+        },
+        { // OAM
+            id: 'RESMA',
+            title: 'RA End switch settings',
+            label: 'What settings do you want to use for the RA end switches:',
+            variable: 'endswraadv',
+            condition: "$endswra == Y",
+            define: '',
+            control: {
+                type: 'textinput',
+                choices: [
+                    { key: 'E', label: 'East direction pin that sensor is attached to', defaultValue: '19', defineLine: '#define RA_ENDSWITCH_EAST_SENSOR_PIN   {0}' },
+                    { key: 'W', label: 'West direction pin that sensor is attached to', defaultValue: '18', defineLine: '#define RA_ENDSWITCH_WEST_SENSOR_PIN   {0}' },
+                    { key: 'D', label: 'How many degrees should the mount slew back to get off the switches', defaultValue: '3.0', defineLine: '#define RA_ENDSWITCH_BACKSLEW_DEG      {0}' },
+                ]
+            },
+        },
+        { // OAM
+            id: 'DESM',
+            title: 'DEC End switches',
+            label: 'Do you have end switches installed on the DEC axis:',
+            variable: 'endswdec',
+            condition: "$tracker == OAM",
+            define: 'USE_DEC_END_SWITCH',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'N', value: 'No DEC end switches installed', image: '/images/none.png', defineValue: '0' },
+                    { key: 'Y', value: 'DEC end switches are installed', image: '/images/none.png', defineValue: '1' },
+                ]
+            },
+        },
+        { // OAM
+            id: 'DESMA',
+            title: 'DEC End switch settings',
+            label: 'What settings do you want to use for the DEC end switches:',
+            variable: 'endswdecadv',
+            condition: "$endswdec == Y",
+            define: '',
+            control: {
+                type: 'textinput',
+                choices: [
+                    { key: 'E', label: 'Up direction pin that sensor is attached to', defaultValue: '32', defineLine: '#define DEC_ENDSWITCH_UP_SENSOR_PIN    {0}' },
+                    { key: 'W', label: 'Down direction pin that sensor is attached to', defaultValue: '47', defineLine: '#define DEC_ENDSWITCH_DOWN_SENSOR_PIN  {0}' },
+                    { key: 'D', label: 'How many degrees should the mount slew back to get off the switches', defaultValue: '3.0', defineLine: '#define DEC_ENDSWITCH_BACKSLEW_DEG     {0}' },
                 ]
             },
         },
@@ -1015,7 +1418,9 @@ const WizardStep = (props) => {
             }
             // Collect all variables
             if (allVars.has(stepProps[i].variable)) {
-                throw new WizardException("Variable " + stepProps[i].variable + " defined twice. Second on in " + i);
+                if (!stepProps[i].condition) {
+                    throw new WizardException("Variable " + stepProps[i].variable + " defined twice. Second one in step " + i);
+                }
             }
             allVars.add(stepProps[i].variable)
         }
@@ -1050,11 +1455,13 @@ const WizardStep = (props) => {
         if (index < stepIndex) {
             let foundConfig = configuration.find(config => config.variable === stepProps[index].variable);
             if (foundConfig && !Array.isArray(foundConfig.value)) {
-                let foundControl = stepProps[index].control.choices.find(choice => foundConfig.value === choice.key);
-                if (!foundControl) {
-                    console.log("Could not find control ", foundConfig)
-                } else {
-                    description = foundControl.value;
+                if (stepProps[index].control) {
+                    let foundControl = stepProps[index].control.choices.find(choice => foundConfig.value === choice.key);
+                    if (!foundControl) {
+                        console.log("Could not find control ", foundConfig)
+                    } else {
+                        description = foundControl.value;
+                    }
                 }
             }
         }
@@ -1065,7 +1472,7 @@ const WizardStep = (props) => {
         }
 
         if ((!skipState.skip) || (index <= stepIndex)) {
-            steps.push(<Step title={title} description={description} />)
+            steps.push(<Step size="small" title={title} description={description} />)
         }
     });
 
@@ -1078,75 +1485,108 @@ const WizardStep = (props) => {
             if (configKey.length) {
                 configKey += ','
             }
-            let property = stepProps.find(prop => prop.variable === config.variable);
-            let defineLine = null;
-            configKey += property.id
-            if (property.control.type === 'textinput') {
-                if (property.preamble) {
-                    defines = [...defines, ...property.preamble];
-                }
-                property.control.choices.forEach(choice => {
-                    let configVal = config.value.find(cfgval => cfgval.key === choice.key);
-                    let val = (configVal ? configVal.value : null) || getDefaultValue(choice.defaultValue) || '';
-                    configKey += choice.key + val + ':'
-                    defineLine = choice.defineLine.replace('{0}', val);
-                    defines = [...defines, defineLine];
-                    if (choice.additionalLines) {
-                        defines = [...defines, ...choice.additionalLines];
+
+            let property
+            let properties = stepProps.filter(prop => prop.variable === config.variable);
+            if (properties.length === 1) {
+                property = properties[0]
+            } else {
+                properties.forEach((prop) => {
+                    let skip = false
+                    const expr = parseExpression(prop.condition)
+                    const exprResult = evaluateExpression(expr);
+                    if (exprResult.status === 'skip') {
+                        skip = true;
+                    }
+                    else {
+                        skip = !exprResult.bool;
+                    }
+                    if (!skip) {
+                        if (property) {
+                            throw new WizardException("More than one property satisfies condition [" + prop.condition + "]. " + properties.map(p => p.id).join(', '))
+                        }
+                        property = prop
                     }
                 })
-                if (property.postamble) {
-                    const postLines = []
-                    property.postamble.forEach(entry => {
-                        let output = true
-                        if (entry.condition) {
-                            const expr = parseExpression(entry.condition)
-                            const exprResult = evaluateExpression(expr);
-                            if (exprResult.bool === false) {
-                                output = false
-                            }
-                        }
-                        if (output && entry.literal) {
-                            postLines.push(...entry.literal)
-                        }
-                    })
-                    defines = [...defines, ...postLines];
-                }
             }
-            else {
-                let propertyValue = property.control.choices.find(choice => choice.key === config.value);
-                configKey += ':' + propertyValue.key
-                if (property.preamble) {
-                    defines = [...defines, ...(property.preamble.map((pre) => pre.replace('{v}', propertyValue.value)))];
-                }
-                if (property.define) {
-                    defines = [...defines, '#define ' + property.define + ' ' + propertyValue.defineValue];
-                }
-                if (propertyValue.additionalLines) {
-                    defines = [...defines, ...propertyValue.additionalLines];
-                }
-                if (property.postamble) {
-                    const postLines = []
-                    property.postamble.forEach(entry => {
-                        let output = true
-                        if (entry.condition) {
-                            const expr = parseExpression(entry.condition)
-                            const exprResult = evaluateExpression(expr);
-                            if (exprResult.bool === false) {
-                                output = false
-                            }
+
+            let defineLine = null;
+            configKey += property.id
+            if (property.control) {
+                if (property.control.type === 'textinput') {
+                    if (property.preamble) {
+                        defines = [...defines, ...property.preamble];
+                    }
+                    property.control.choices.forEach(choice => {
+                        let configVal = config.value.find(cfgval => cfgval.key === choice.key);
+                        let val = (configVal ? configVal.value : null) || getDefaultValue(choice.defaultValue) || '';
+                        configKey += choice.key + val + ':'
+                        defineLine = choice.defineLine.replace('{0}', val);
+                        while (defineLine.indexOf('{0}') >= 0) {
+                            defineLine = defineLine.replace('{0}', val);
                         }
-                        if (output && entry.literal) {
-                            postLines.push(...entry.literal.map(e => e.replace('{v}', propertyValue.defineValue)))
+                        const defineLines = defineLine.split('\n')
+                        defines = [...defines, ...defineLines];
+                        if (choice.additionalLines) {
+                            defines = [...defines, ...choice.additionalLines];
                         }
                     })
-                    defines = [...defines, ...postLines];
+                    if (property.postamble) {
+                        const postLines = []
+                        property.postamble.forEach(entry => {
+                            let output = true
+                            if (entry.condition) {
+                                const expr = parseExpression(entry.condition)
+                                const exprResult = evaluateExpression(expr);
+                                if (exprResult.bool === false) {
+                                    output = false
+                                }
+                            }
+                            if (output && entry.literal) {
+                                postLines.push(...entry.literal)
+                            }
+                        })
+                        defines = [...defines, ...postLines];
+                    }
+                }
+                else {
+                    let propertyValue = property.control.choices.find(choice => choice.key === config.value);
+                    configKey += ':' + propertyValue.key
+                    if (property.preamble) {
+                        defines = [...defines, ...(property.preamble.map((pre) => pre.replace('{v}', propertyValue.value)))];
+                    }
+                    if (property.define) {
+                        defines = [...defines, '#define ' + property.define + ' ' + propertyValue.defineValue];
+                    }
+                    if (propertyValue.defineLine) {
+                        defines = [...defines, propertyValue.defineLine];
+                    }
+                    if (propertyValue.additionalLines) {
+                        defines = [...defines, ...propertyValue.additionalLines];
+                    }
+                    if (property.postamble) {
+                        const postLines = []
+                        property.postamble.forEach(entry => {
+                            let output = true
+                            if (entry.condition) {
+                                const expr = parseExpression(entry.condition)
+                                const exprResult = evaluateExpression(expr);
+                                if (exprResult.bool === false) {
+                                    output = false
+                                }
+                            }
+                            if (output && entry.literal) {
+                                postLines.push(...entry.literal.map(e => e.replace('{v}', propertyValue.defineValue)))
+                            }
+                        })
+                        defines = [...defines, ...postLines];
+                    }
                 }
             }
             defines = [...defines, ''];
         });
 
-        defines.splice(4, 0, '// Unique ConfigKey: ' + configKey);
+        defines.splice(5, 0, '// Unique ConfigKey: ' + configKey);
 
         defines.push('///////////////////////');
         defines.push('// Debug settings');
@@ -1156,7 +1596,7 @@ const WizardStep = (props) => {
 
         return <div className='steps-container'>
             <div className='steps-column'>
-                <Steps current={stepIndex} direction='vertical'>
+                <Steps size="small" current={stepIndex} direction='vertical'>
                     {steps}
                 </Steps>
             </div>
@@ -1184,58 +1624,62 @@ const WizardStep = (props) => {
     } else {
         let control = null
         const stepControl = stepProps[stepIndex].control;
-        const controlKey = stepControl.type + "_" + stepIndex + "_"
-        switch (stepControl.type) {
-            case 'combo':
-                control = <Select key={controlKey} onSelect={(e) => onSelect(stepIndex, e)}>
-                    {stepControl.choices.map((ch) => <Select.Option value={ch.key}>{ch.value}</Select.Option>)}
-                </Select>
+        if (!stepControl) {
+            setStepIndex(stepIndex + 1)
+        } else {
+            const controlKey = stepControl.type + "_" + stepIndex + "_"
+            switch (stepControl.type) {
+                case 'combo':
+                    control = <Select key={controlKey} onSelect={(e) => onSelect(stepIndex, e)}>
+                        {stepControl.choices.map((ch) => <Select.Option value={ch.key}>{ch.value}</Select.Option>)}
+                    </Select>
 
-                break;
+                    break;
 
-            case 'radio':
-                control = <Radio.Group key={controlKey} onChange={(e) => onSelect(stepIndex, e.target.value)} buttonStyle='solid'>
-                    {stepControl.choices.map((ch) => <Radio.Button value={ch.key}>{ch.value}</Radio.Button>)}
-                </Radio.Group>
+                case 'radio':
+                    control = <Radio.Group key={controlKey} onChange={(e) => onSelect(stepIndex, e.target.value)} buttonStyle='solid'>
+                        {stepControl.choices.map((ch) => <Radio.Button value={ch.key}>{ch.value}</Radio.Button>)}
+                    </Radio.Group>
 
-                break;
+                    break;
 
-            case 'radioimg':
-                control = <List
-                    bordered
-                    itemLayout='horizontal'
-                    dataSource={stepControl.choices}
-                    renderItem={item =>
-                        <List.Item>
-                            <Button key={controlKey} value={item.value} onClick={(e) => onSelect(stepIndex, item.key)} >{item.value}</Button>
-                            <Image className='image-column' src={item.image} />
-                        </List.Item>
-                    }
-                />
+                case 'radioimg':
+                    control = <List
+                        bordered
+                        itemLayout='horizontal'
+                        dataSource={stepControl.choices}
+                        renderItem={item =>
+                            <List.Item>
+                                <Button key={controlKey} value={item.value} onClick={(e) => onSelect(stepIndex, item.key)} >{item.value}</Button>
+                                <Image className='image-column' src={item.image} />
+                            </List.Item>
+                        }
+                    />
 
-                break;
+                    break;
 
-            case 'textinput':
-                control = <>
-                    {stepControl.choices.map(input =>
-                        <div style={{ marginBottom: '10pt' }}>
-                            <Input key={controlKey + input.key} addonBefore={input.label} placeholder={input.label} defaultValue={getDefaultValue(input.defaultValue)} onChange={(e) => onChangedText(stepIndex, input.key, e.target.value)} />
+                case 'textinput':
+                    control = <>
+                        {stepControl.choices.map(input =>
+                            <div style={{ marginBottom: '10pt' }}>
+                                <Input key={controlKey + input.key} addonBefore={input.label} placeholder={input.label} defaultValue={getDefaultValue(input.defaultValue)} onChange={(e) => onChangedText(stepIndex, input.key, e.target.value)} />
+                            </div>
+                        )}
+                        <div className='back-button' >
+                            <Button key={controlKey + "ok"} value='OK' type='primary' onClick={(e) => onChangedText(stepIndex, '$OK')} >Next</Button>
                         </div>
-                    )}
-                    <div className='back-button' >
-                        <Button key={controlKey + "ok"} value='OK' type='primary' onClick={(e) => onChangedText(stepIndex, '$OK')} >Next</Button>
-                    </div>
-                    <br></br>
-                </>
+                        <br></br>
+                    </>
 
-                break;
-            default:
-                break;
+                    break;
+                default:
+                    break;
+            }
         }
 
         return <div className='steps-container'>
             <div className='steps-column'>
-                <Steps current={stepIndex} direction='vertical'>
+                <Steps size="small" current={stepIndex} direction='vertical'>
                     {steps}
                 </Steps>
             </div>
