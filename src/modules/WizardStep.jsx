@@ -339,7 +339,7 @@ const WizardStep = (props) => {
                 type: 'radioimg',
                 choices: [
                     {
-                        key: 'L', value: 'Latest Version (V1.12.x)', image: '/images/none.png', defineValue: '', additionalLines: [
+                        key: 'L', value: 'Latest Version (V1.13.x)', image: '/images/none.png', defineValue: '', additionalLines: [
                             '// Use the much higher stepper performance the new library.',
                             '#define NEW_STEPPER_LIB'
                         ]
@@ -353,7 +353,7 @@ const WizardStep = (props) => {
         { // OAM
             id: 'FWM',
             title: 'Firmware',
-            label: 'You must use V1.12.x firmware on OAM:',
+            label: 'You must use V1.13.x firmware on OAM:',
             variable: 'fwversion',
             condition: "$tracker == OAM",
             define: '',
@@ -361,7 +361,7 @@ const WizardStep = (props) => {
                 type: 'radioimg',
                 choices: [
                     {
-                        key: 'L', value: 'Latest Version (V1.12.x)', image: '/images/none.png', defineValue: '', additionalLines: [
+                        key: 'L', value: 'Latest Version (V1.13.x)', image: '/images/none.png', defineValue: '', additionalLines: [
                             '// OAM requires the much higher stepper performance of the new stepper library.',
                             '#define NEW_STEPPER_LIB'
                         ],
