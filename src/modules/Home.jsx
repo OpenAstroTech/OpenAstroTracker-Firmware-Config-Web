@@ -11,9 +11,9 @@ const Home = (props) => {
 
       <div className="intro-horizontal-bar">
         <div className="intro-link-child">
-        <h3 className="intro-header">OAT FIRMWARE CONFIGURATION</h3>
+        <h3 className="intro-header">OAT/OAM FIRMWARE CONFIGURATION</h3>
           <a className="intro-link" href="steps">START</a>
-          <p className="version">V2.04</p>
+          <p className="version">V2.10</p>
         </div>
       </div>
 
