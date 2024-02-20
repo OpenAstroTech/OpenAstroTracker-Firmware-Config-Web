@@ -1119,13 +1119,19 @@ const WizardStep = (props) => {
                     '// #define AZ_CIRCUMFERENCE        (725)  // the circumference of the circle where the movement is anchored',
                     '// #define AZ_PULLEY_TEETH         16',
                     '',
-                    '// Should AZ motor stay energized?',
-                    '#define AZ_ALWAYS_ON  1',
-                    '',
                     '// Is it going the wrong way?',
                     '#define AZ_INVERT_DIR 0'
                 ]
-            }],
+            },
+            {
+                literal : [
+                    '',
+                    '// Should AZ motor stay energized?',
+                    '#define AZ_ALWAYS_ON  1',
+                ],
+                condition: "$tracker == OAM",
+            }
+            ],
             define: '',
             control: {
                 type: 'textinput',
@@ -1244,7 +1250,6 @@ const WizardStep = (props) => {
                     '',
                     '///////////////////////////////',
                     '// ALT parameters are for hardware as designed',
-                    '#define ALT_MICROSTEPPING              64',
                     '#define ALTITUDE_STEPS_PER_ARC_MINUTE  ((1640 / 60) * ALT_MICROSTEPPING)',
                     '',
                     '// Is it going the wrong way?',
