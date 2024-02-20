@@ -516,9 +516,6 @@ const WizardStep = (props) => {
             postamble: [{
                 literal: [
                     '',
-                    '// TMC2209 Stealth Mode (spreadCycle) - When set to 0, tracking is more precise, but noisy (high-pitched sound). When set to 1, they are silent.',
-                    '#define RA_UART_STEALTH_MODE          0',
-                    '',
                     '// Is it going the wrong way?',
                     '#define RA_INVERT_DIR  0'
                 ]
@@ -545,9 +542,6 @@ const WizardStep = (props) => {
             },
             postamble: [{
                 literal: [
-                    '',
-                    '// TMC2209 Stealth Mode (spreadCycle) - When set to 0, tracking is more precise, but noisy (high-pitched sound). When set to 1, they are silent.',
-                    '#define RA_UART_STEALTH_MODE          0',
                     '',
                     '// Is it going the wrong way?',
                     '#define RA_INVERT_DIR  0'
@@ -701,9 +695,6 @@ const WizardStep = (props) => {
             postamble: [{
                 literal: [
                     '',
-                    '// TMC2209 Stealth Mode (spreadCycle) - When set to 0, tracking is more precise, but noisy (high-pitched sound). When set to 1, they are silent.',
-                    '#define DEC_UART_STEALTH_MODE          0',
-                    '',
                     '// Is it going the wrong way?',
                     '#define DEC_INVERT_DIR  0'
                 ]
@@ -730,9 +721,6 @@ const WizardStep = (props) => {
             },
             postamble: [{
                 literal: [
-                    '',
-                    '// TMC2209 Stealth Mode (spreadCycle) - When set to 0, guiding is more precise, but noisy (high-pitched sound). When set to 1, they are silent.',
-                    '#define DEC_UART_STEALTH_MODE          0',
                     '',
                     '// Is it going the wrong way?',
                     '#define DEC_INVERT_DIR  0'
@@ -771,6 +759,22 @@ const WizardStep = (props) => {
                 ]
             },
         },        
+        {
+            id: 'STL',
+            title: 'Stepper Stealth Mode',
+            label: 'What mode do you want to run the RA and DEC steppers in? If Stealth Mode, they will be inaudible (when not slewing), but have slightly lower performance. In Normal mode, they will make a soft hissing sound, but will have better performance.',
+            variable: 'stealhmode',
+            condition: "($radrv == TU) AND ($decdrv == TU)",
+            preamble: ['// TMC2209 Stealth Mode (spreadCycle) - When set to 0, tracking is more precise, but noisy (high-pitched hissing sound). When set to 1, they are silent.'],
+            define: '',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'S', value: 'Stealth Mode (silent)', image: '/images/none.png', additionalLines: ['#define RA_UART_STEALTH_MODE      1', '#define DEC_UART_STEALTH_MODE     1'] },
+                    { key: 'N', value: 'Normal Mode (hissing)', image: '/images/none.png', additionalLines: ['#define RA_UART_STEALTH_MODE      0', '#define DEC_UART_STEALTH_MODE     0'] },
+                ]
+            },
+        },
         {
             id: 'DY',
             title: 'Display',
@@ -1288,22 +1292,6 @@ const WizardStep = (props) => {
                 choices: [
                     { key: 'Y', value: 'Yes', image: '/images/none.png', defineValue: '1' },
                     { key: 'N', value: 'No', image: '/images/none.png', defineValue: '0' },
-                ]
-            },
-        },
-        {
-            id: 'STL',
-            title: 'Stepper Stealth Mode',
-            label: 'What mode do you want to run the steppers in? If Stealth Mode, they will be inaudible (when not slewing), but have slightly lower performance. In Normal mode, they will make a soft hissing sound, but will have better performance.',
-            variable: 'stealhmode',
-            condition: "($radrv == TU) AND ($decdrv == TU)",
-            preamble: ['// Define whether to run steppers in Stealth mode or not'],
-            define: '',
-            control: {
-                type: 'radioimg',
-                choices: [
-                    { key: 'S', value: 'Stealth Mode (silent)', image: '/images/none.png', additionalLines: ['#define RA_UART_STEALTH_MODE      1', '#define DEC_UART_STEALTH_MODE     1'] },
-                    { key: 'N', value: 'Normal Mode (hissing)', image: '/images/none.png', additionalLines: ['#define RA_UART_STEALTH_MODE      0', '#define DEC_UART_STEALTH_MODE     0'] },
                 ]
             },
         },
