@@ -29,6 +29,7 @@ const Defaults = {
     OAMSpeed: { N9: 2.0, N8: 2.0 },
     OAMAcceleration: { N9: 2.0, N8: 2.0 },
     OAMMicrostepping: { N9: 64, N8: 64 },
+    RAHallSensorPin: { OAT: 53, OAM: 27 },
 }
 
 function WizardException(message) {
@@ -754,6 +755,22 @@ const WizardStep = (props) => {
                 ]
             },
         },
+        { 
+            id: 'DLI',
+            title: 'DEC Movement Limits',
+            label: 'These are required settings to determine how far DEC can move up and down from the Home position without hitting any hardware limits:',
+            variable: 'declimits',
+            condition: "$tracker == OAT",
+            preamble: ['// Define DEC limits'],
+            define: '',
+            control: {
+                type: 'textinput',
+                choices: [
+                    { key: 'N', label: 'Degrees DEC can move up from Home', defaultValue: '90', defineLine: '#define DEC_LIMIT_UP   {0} // degrees from Home' },
+                    { key: 'D', label: 'Degrees DEC can move down from Home', defaultValue: '45', defineLine: '#define DEC_LIMIT_DOWN {0} // degrees from Home' },
+                ]
+            },
+        },        
         {
             id: 'DY',
             title: 'Display',
@@ -1274,6 +1291,22 @@ const WizardStep = (props) => {
                 ]
             },
         },
+        {
+            id: 'STL',
+            title: 'Stepper Stealth Mode',
+            label: 'What mode do you want to run the steppers in? If Stealth Mode, they will be inaudible (when not slewing), but have slightly lower performance. In Normal mode, they will make a soft hissing sound, but will have better performance.',
+            variable: 'stealhmode',
+            condition: "($radrv == TU) AND ($decdrv == TU)",
+            preamble: ['// Define whether to run steppers in Stealth mode or not'],
+            define: '',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'S', value: 'Stealth Mode (silent)', image: '/images/none.png', additionalLines: ['#define RA_UART_STEALTH_MODE      1', '#define DEC_UART_STEALTH_MODE     1'] },
+                    { key: 'N', value: 'Normal Mode (hissing)', image: '/images/none.png', additionalLines: ['#define RA_UART_STEALTH_MODE      0', '#define DEC_UART_STEALTH_MODE     0'] },
+                ]
+            },
+        },
         //////////////////// HALL Sensors ///////////////////////////
         {
             id: 'RAH',
@@ -1301,7 +1334,7 @@ const WizardStep = (props) => {
             control: {
                 type: 'textinput',
                 choices: [
-                    { key: 'P', label: 'Pin that sensor is attached to', defaultValue: '27', defineLine: '#define RA_HOMING_SENSOR_PIN            {0}' },
+                    { key: 'P', label: 'Pin that sensor is attached to', defaultValue: '{Defaults.RAHallSensorPin.tracker}', defineLine: '#define RA_HOMING_SENSOR_PIN            {0}' },
                     { key: 'S', label: 'Number of degrees to search for sensor', defaultValue: '10', defineLine: '#define RA_HOMING_SENSOR_SEARCH_DEGREES {0}' },
                 ]
             },
