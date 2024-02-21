@@ -15,10 +15,10 @@ import { parseExpression } from './parser.js'
 const { Step } = Steps;
 
 const Defaults = {
-    PowerRating: { BY: 150, N9: 1800, N8: 1800, N49: 400, N48: 400 },
-    PowerUtilization: { BY: 100, N9: 90, N8: 90, N49: 90, N48: 90 },
+    PowerRating: { BY: 150, N9: 1800, N8: 1800, N9O: 1800, N8O: 1800, N49: 400, N48: 400 },
+    PowerUtilization: { BY: 100, N9: 90, N8: 90, N9O: 90, N8O: 90, N49: 90, N48: 90 },
     HoldPercentage: { BY: 0, N9: 10, N8: 10, N49: 10, N48: 10 },
-    Speed: { BY: 400, N9: 1200, N8: 1200, N49: 1200, N48: 1200 },
+    Speed: { BY: 400, N9: 1800, N8: 1800, N49: 1200, N48: 1200 },
     Acceleration: { BY: 600, N9: 3000, N8: 3000, N49: 3000, N48: 3000 },
     RASlewMicrostepping: { BY: 1, N9: 8, N8: 16 },
     RATrackMicrostepping: { BY: 1, N9: 256, N8: 256 },
@@ -26,9 +26,9 @@ const Defaults = {
     DECGuideMicrostepping: { BY: 1, N9: 256, N8: 256 },
     FocuserMicrostepping: { BY: 1, N9: 8, N8: 8, N49: 8, N48: 8 },
     AZALTMicrostepping: { BY: 1, N9: 16, N8: 16 },
-    OAMSpeed: { N9: 2.0, N8: 2.0 },
-    OAMAcceleration: { N9: 2.0, N8: 2.0 },
-    OAMMicrostepping: { N9: 64, N8: 64 },
+    OAMSpeed: { N9: 2.0, N8: 2.0, N9O: 2.0, N8O: 2.0 },
+    OAMAcceleration: { N9: 2.0, N8: 2.0, N9O: 2.0, N8O: 2.0 },
+    OAMMicrostepping: { N9: 64, N8: 64, N9O: 64, N8O: 64 },
     RAHallSensorPin: { OAT: 53, OAM: 27 },
 }
 
@@ -339,15 +339,8 @@ const WizardStep = (props) => {
             control: {
                 type: 'radioimg',
                 choices: [
-                    {
-                        key: 'L', value: 'Latest Version (V1.13.x)', image: '/images/none.png', defineValue: '', additionalLines: [
-                            '// Use the much higher stepper performance the new library.',
-                            '#define NEW_STEPPER_LIB'
-                        ]
-                    },
+                    { key: 'L', value: 'Latest Version (V1.13.x)', image: '/images/none.png', defineValue: '' },
                     { key: 'O', value: 'Official Versions (V1.11.x)', image: '/images/none.png', defineValue: '' },
-                    //{ key: 'B', value: 'Last Official to support 28NYJ-48 (V1.9.30)', image: '/images/none.png', defineValue: '' },
-                    //{ key: 'D', value: 'Latest Develop (V1.10.3x)', image: '/images/none.png', defineValue: '' },
                 ]
             },
         },
@@ -366,11 +359,37 @@ const WizardStep = (props) => {
                             '// OAM requires the much higher stepper performance of the new stepper library.',
                             '#define NEW_STEPPER_LIB'
                         ],
-                        additionalVariables: [{ 'autopa': 'Y' }, { 'autopaversion': '2' }]
+                        additionalVariables: [
+                            { 'autopa': 'Y' },
+                            { 'autopaversion': '2' },
+                            { 'stepperlib': 'N' }
+                        ]
                     },
-                    // { key: 'O', value: 'Official Versions (V1.11.x)', image: '/images/none.png', defineValue: '' },
-                    // { key: 'B', value: 'Last Official to support 28NYJ-48 (V1.9.30)', image: '/images/none.png', defineValue: '' },
-                    // { key: 'D', value: 'Latest Develop (V1.10.3x)', image: '/images/none.png', defineValue: '' },
+                ]
+            },
+        },
+        {
+            id: 'SL',
+            title: 'Stepper Library',
+            label: 'Which Stepper Library do you want to use for RA and DEC:',
+            variable: 'stepperlib',
+            condition: "$tracker == OAT",
+            define: '',
+            control: {
+                type: 'radioimg',
+                choices: [
+                    {
+                        key: 'N', value: 'New high performance Stepper Library (by OpenAstroTech)', image: '/images/OpenAstroTech.png', defineValue: '', additionalLines: [
+                            '// Use the much higher performance stepper library.',
+                            '#define NEW_STEPPER_LIB'
+                        ]
+                    },
+                    {
+                        key: 'O', value: 'Older AccelStepper library (max 2kHz stepping)', image: '/images/none.png', defineValue: '', additionalLines: [
+                            '// To use the much higher performance stepper library uncomment the next line.',
+                            '// #define NEW_STEPPER_LIB'
+                        ]
+                    },
                 ]
             },
         },
@@ -420,12 +439,12 @@ const WizardStep = (props) => {
             label: 'Which stepper motor are you using for RA:',
             condition: "$tracker == OAT",
             variable: 'rastpr',
-            preamble: ['////////////////////////////////', '// RA Stepper configuration ', '// See supported stepper values. Change according to the steppers you are using', '// Using the {v} stepper for RA'],
+            preamble: ['////////////////////////////////', '// RA Stepper configuration (OAT)', '// See supported stepper values. Change according to the steppers you are using', '// Using the {v} stepper for RA'],
             define: 'RA_STEPPER_TYPE',
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define RA_STEPPER_SPR  2048.0f // steps/rev',] },
+                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define RA_STEPPER_SPR  2048.0f // steps/rev',], condition: "$stepperlib != N" },
                     { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE' },
                     { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define RA_STEPPER_SPR 200.0f'] },
                 ]
@@ -461,34 +480,17 @@ const WizardStep = (props) => {
                 ]
             },
         },
-        { // OAT
+        {
             id: 'RDO',
             title: 'RA Driver',
             label: 'Which driver board are you using to drive the RA stepper motor:',
             variable: 'radrv',
-            condition: "$tracker == OAT",
             preamble: ['// Using the {v} driver for RA stepper motor'],
             define: 'RA_DRIVER_TYPE',
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
-                    { key: 'TU', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
-                    { key: 'TS', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
-                ]
-            },
-        },
-        { // OAM - No support for A4988
-            id: 'RDM',
-            title: 'RA Driver',
-            label: 'Which driver board are you using to drive the RA stepper motor:',
-            variable: 'radrv',
-            condition: "$tracker == OAM",
-            preamble: ['// Using the {v} driver for RA stepper motor'],
-            define: 'RA_DRIVER_TYPE',
-            control: {
-                type: 'radioimg',
-                choices: [
+                    { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC', condition: "$tracker == OAT" },
                     { key: 'TU', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
                     { key: 'TS', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
                 ]
@@ -517,7 +519,12 @@ const WizardStep = (props) => {
                 literal: [
                     '',
                     '// Is it going the wrong way?',
-                    '#define RA_INVERT_DIR  0'
+                    '#define RA_INVERT_DIR  0',
+                    '',
+                    '#ifdef NEW_STEPPER_LIB',
+                    '  #define RA_SLEWING_ACCELERATION_DEG   2.0  // deg/s/s',
+                    '  #define RA_SLEWING_SPEED_DEG          2.0  // deg/s',
+                    '#endif',
                 ]
             }
             ]
@@ -589,85 +596,55 @@ const WizardStep = (props) => {
                 ]
             },
         },
-        { // OAT
-            id: 'DST',
+        {
+            id: 'DS',
             title: 'DEC Stepper',
             label: 'Which stepper motor are you using for DEC:',
             variable: 'decstpr',
-            condition: "$tracker == OAT",
             preamble: ['////////////////////////////////', '// DEC Stepper configuration ', '// See supported stepper values. Change according to the steppers you are using', '// Using the {v} stepper for DEC'],
             define: 'DEC_STEPPER_TYPE',
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define DEC_STEPPER_SPR 2048.0f'] },
-                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE' },
-                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define DEC_STEPPER_SPR 200.0f'] },
-                    { key: 'N49', value: 'NEMA 14, 0.9°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLE' },
-                    { key: 'N48', value: 'NEMA 14, 1.8°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define DEC_STEPPER_SPR 200.0f'] },
+                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define DEC_STEPPER_SPR 2048.0f'], condition: "($tracker == OAT) AND ($stepperlib != N)" },
+                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE', condition: "$tracker == OAT" },
+                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define DEC_STEPPER_SPR 200.0f'], condition: "$tracker == OAT" },
+                    { key: 'N49', value: 'NEMA 14, 0.9°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLE', condition: "$tracker == OAT" },
+                    { key: 'N48', value: 'NEMA 14, 1.8°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define DEC_STEPPER_SPR 200.0f'], condition: "$tracker == OAT" },
+                    {
+                        key: 'N9O',
+                        value: 'NEMA 17, 0.9°/step',
+                        image: '/images/nema17.png',
+                        defineValue: 'STEPPER_TYPE_ENABLE',
+                        condition: "$tracker == OAM",
+                        additionalLines: ['#define DEC_STEPPER_SPR                (400 * 9)']
+                    },
+                    {
+                        key: 'N8O',
+                        value: 'NEMA 17, 1.8°/step',
+                        image: '/images/nema17.png',
+                        defineValue: 'STEPPER_TYPE_ENABLE',
+                        condition: "$tracker == OAM",
+                        additionalLines: ['#define DEC_STEPPER_SPR                (200 * 9)']
+                    },
                 ]
             },
-        },
-        { // OAM
-            id: 'DSM',
-            title: 'DEC Stepper',
-            label: 'Which stepper motor are you using for DEC:',
-            variable: 'decstpr',
-            condition: "$tracker == OAM",
-            preamble: ['////////////////////////////////', '// DEC Stepper configuration ', '// See supported stepper values. Change according to the steppers you are using', '// Using the {v} stepper for DEC'],
             postamble: [{
-                literal: [
-                    '#define DEC_WHEEL_CIRCUMFERENCE        816.814f',
-                ]
-            }
-            ],
-            define: 'DEC_STEPPER_TYPE',
-            control: {
-                type: 'radioimg',
-                choices: [
-                    {
-                        key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE',
-                        additionalLines: [
-                            '#define DEC_STEPPER_SPR                (400 * 9)',
-                        ]
-                    },
-                    {
-                        key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE',
-                        additionalLines: [
-                            '#define DEC_STEPPER_SPR                (200 * 9)',
-                        ]
-                    },
-                ]
-            },
+                literal: ['#define DEC_WHEEL_CIRCUMFERENCE        816.814f'],
+                condition: "$tracker == OAM",
+            }],
         },
-        { // OAT
+        {
             id: 'DDT',
             title: 'DEC Driver',
             label: 'Which driver board are you using to drive the DEC stepper motor:',
             variable: 'decdrv',
-            condition: "$tracker == OAT",
             preamble: ['// Using the {v} driver for DEC stepper'],
             define: 'DEC_DRIVER_TYPE',
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
-                    { key: 'TU', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
-                    { key: 'TS', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
-                ]
-            },
-        },
-        { //OAM - No A4988
-            id: 'DDM',
-            title: 'DEC Driver',
-            label: 'Which driver board are you using to drive the DEC stepper motor:',
-            variable: 'decdrv',
-            condition: "$tracker == OAM",
-            preamble: ['// Using the {v} driver for DEC stepper'],
-            define: 'DEC_DRIVER_TYPE',
-            control: {
-                type: 'radioimg',
-                choices: [
+                    { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC', condition: "$tracker == OAT" },
                     { key: 'TU', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
                     { key: 'TS', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
                 ]
@@ -696,7 +673,12 @@ const WizardStep = (props) => {
                 literal: [
                     '',
                     '// Is it going the wrong way?',
-                    '#define DEC_INVERT_DIR  0'
+                    '#define DEC_INVERT_DIR  0',
+                    '',
+                    '#ifdef NEW_STEPPER_LIB',
+                    '  #define DEC_SLEWING_ACCELERATION_DEG   2.0  // degs/s/s',
+                    '  #define DEC_SLEWING_SPEED_DEG          2.0  // deg/s',
+                    '#endif',
                 ]
             }
             ]
@@ -743,7 +725,7 @@ const WizardStep = (props) => {
                 ]
             },
         },
-        { 
+        {
             id: 'DLI',
             title: 'DEC Movement Limits',
             label: 'These are required settings to determine how far DEC can move up and down from the Home position without hitting any hardware limits:',
@@ -758,7 +740,7 @@ const WizardStep = (props) => {
                     { key: 'D', label: 'Degrees DEC can move down from Home', defaultValue: '45', defineLine: '#define DEC_LIMIT_DOWN {0} // degrees from Home' },
                 ]
             },
-        },        
+        },
         {
             id: 'STL',
             title: 'Stepper Stealth Mode',
@@ -1054,62 +1036,30 @@ const WizardStep = (props) => {
             title: 'Azimuth Stepper',
             label: 'Which stepper motor are you using for the Azimuth:',
             variable: 'az',
-            condition: "($autopa == Y) AND ($tracker == OAT)",
+            condition: "($autopa == Y)",
             preamble: ['// Using the {v} stepper for AZ'],
             define: 'AZ_STEPPER_TYPE',
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48mod.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define AZ_STEPPER_SPR 2048.0f'] },
+                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48mod.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define AZ_STEPPER_SPR 2048.0f'], condition: "$tracker == OAT" },
                     { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED' },
                     { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define AZ_STEPPER_SPR 200.0f'] },
                 ]
             },
         },
-        { // OAM
-            id: 'ZSM',
-            title: 'Azimuth Stepper',
-            label: 'Which stepper motor are you using for the Azimuth:',
-            variable: 'az',
-            condition: "($autopa == Y) AND ($tracker == OAM)",
-            preamble: ['// Using the {v} stepper for AZ'],
-            define: 'AZ_STEPPER_TYPE',
-            control: {
-                type: 'radioimg',
-                choices: [
-                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED' },
-                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define AZ_STEPPER_SPR 200.0f'] },
-                ]
-            },
-        },
-        { // OAT
-            id: 'ZDT',
+        {
+            id: 'ZD',
             title: 'Azimuth Driver',
             label: 'Which driver board are you using to drive the Azimuth stepper motor:',
             variable: 'azdrv',
-            condition: "($autopa == Y) AND ($tracker == OAT)",
+            condition: "($autopa == Y)",
             preamble: ['// Using the {v} driver for AZ stepper motor'],
             define: 'AZ_DRIVER_TYPE',
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
-                    { key: 'TU', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
-                    { key: 'TS', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
-                ]
-            },
-        },
-        { // OAM
-            id: 'ZDM',
-            title: 'Azimuth Driver',
-            label: 'Which driver board are you using to drive the Azimuth stepper motor:',
-            variable: 'azdrv',
-            condition: "($autopa == Y) AND ($tracker == OAM)",
-            preamble: ['// Using the {v} driver for AZ stepper motor'],
-            define: 'AZ_DRIVER_TYPE',
-            control: {
-                type: 'radioimg',
-                choices: [
+                    { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC', condition: "$tracker == OAT" },
                     { key: 'TU', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
                     { key: 'TS', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
                 ]
@@ -1145,7 +1095,7 @@ const WizardStep = (props) => {
                 ]
             },
             {
-                literal : [
+                literal: [
                     '',
                     '// Should AZ motor stay energized?',
                     '#define AZ_ALWAYS_ON  1',
@@ -1180,67 +1130,35 @@ const WizardStep = (props) => {
                 ]
             },
         },
-        { // OAT
+        {
             id: 'LST',
             title: 'Altitude Stepper',
             label: 'Which stepper motor are you using for the Altitude:',
             variable: 'alt',
-            condition: "($autopa == Y) AND ($tracker == OAT)",
+            condition: "($autopa == Y)",
             preamble: ['// Using the {v} stepper for ALT'],
             define: 'ALT_STEPPER_TYPE',
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48mod.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define ALT_STEPPER_SPR 2048.0f'] },
+                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48mod.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define ALT_STEPPER_SPR 2048.0f'], condition: "$tracker == OAT" },
                     { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED' },
                     { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define ALT_STEPPER_SPR 200.0f'] },
                 ]
             },
         },
-        { // OAM
-            id: 'LSM',
-            title: 'Altitude Stepper',
-            label: 'Which stepper motor are you using for the Altitude:',
-            variable: 'alt',
-            condition: "($autopa == Y) AND ($tracker == OAM)",
-            preamble: ['// Using the {v} stepper for ALT'],
-            define: 'ALT_STEPPER_TYPE',
-            control: {
-                type: 'radioimg',
-                choices: [
-                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED' },
-                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define ALT_STEPPER_SPR 200.0f'] },
-                ]
-            },
-        },
-        { // OAT
-            id: 'LDT',
+        {
+            id: 'LD',
             title: 'Altitude Driver',
             label: 'Which driver board are you using to drive the Altitude stepper motor:',
             variable: 'altdrv',
-            condition: "($autopa == Y) AND ($tracker == OAT)",
+            condition: "($autopa == Y)",
             preamble: ['// Using the {v} driver for ALT stepper motor'],
             define: 'ALT_DRIVER_TYPE',
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
-                    { key: 'TU', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
-                    { key: 'TS', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
-                ]
-            },
-        },
-        { // OAM
-            id: 'LDM',
-            title: 'Altitude Driver',
-            label: 'Which driver board are you using to drive the Altitude stepper motor:',
-            variable: 'altdrv',
-            condition: "($autopa == Y) AND ($tracker == OAM)",
-            preamble: ['// Using the {v} driver for ALT stepper motor'],
-            define: 'ALT_DRIVER_TYPE',
-            control: {
-                type: 'radioimg',
-                choices: [
+                    { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC', condition: "$tracker == OAT" },
                     { key: 'TU', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
                     { key: 'TS', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
                 ]
@@ -1272,6 +1190,16 @@ const WizardStep = (props) => {
                     '///////////////////////////////',
                     '// ALT parameters are for hardware as designed',
                     '#define ALTITUDE_STEPS_PER_ARC_MINUTE  ((1640 / 60) * ALT_MICROSTEPPING)',
+                    '',
+                    '// Is it going the wrong way?',
+                    '#define ALT_INVERT_DIR 0'
+                ]
+            },
+            {
+                condition: '$tracker == OAT',
+                literal: [
+                    '#define ALT_STEPPER_SPEED             2000',
+                    '#define ALT_STEPPER_ACCELERATION      1000',
                     '',
                     '// Is it going the wrong way?',
                     '#define ALT_INVERT_DIR 0'
@@ -1332,7 +1260,7 @@ const WizardStep = (props) => {
             title: 'DEC Auto Home via Hall sensors',
             label: 'Do you have the Hall sensor-based AutoHome add ons installed on the DEC axis:',
             variable: 'hallhomedec',
-            condition: "$board IN [M,M21]",
+            condition: "($board IN [M,M21]) AND ($tracker == OAM)",
             define: 'USE_HALL_SENSOR_DEC_AUTOHOME',
             control: {
                 type: 'radioimg',
@@ -1473,6 +1401,17 @@ const WizardStep = (props) => {
         return <div />
     }
 
+    const enabledChoices = (choices) => {
+        return choices.filter(ch => {
+            if (!ch.condition) {
+                return true
+            }
+            const expr = parseExpression(ch.condition)
+            const exprResult = evaluateExpression(expr);
+            return exprResult.bool
+        })
+    }
+
     let steps = [];
 
     stepProps.forEach((step, index) => {
@@ -1539,73 +1478,90 @@ const WizardStep = (props) => {
             let defineLine = null;
             configKey += property.id
             if (property.control) {
-                if (property.control.type === 'textinput') {
-                    if (property.preamble) {
-                        defines = [...defines, ...property.preamble];
-                    }
-                    property.control.choices.forEach(choice => {
-                        let configVal = config.value.find(cfgval => cfgval.key === choice.key);
-                        let val = (configVal ? configVal.value : null) || getDefaultValue(choice.defaultValue) || '';
-                        configKey += choice.key + val + ':'
-                        defineLine = choice.defineLine.replace('{0}', val);
-                        while (defineLine.indexOf('{0}') >= 0) {
-                            defineLine = defineLine.replace('{0}', val);
-                        }
-                        const defineLines = defineLine.split('\n')
-                        defines = [...defines, ...defineLines];
-                        if (choice.additionalLines) {
-                            defines = [...defines, ...choice.additionalLines];
-                        }
-                    })
-                    if (property.postamble) {
-                        const postLines = []
-                        property.postamble.forEach(entry => {
-                            let output = true
-                            if (entry.condition) {
-                                const expr = parseExpression(entry.condition)
-                                const exprResult = evaluateExpression(expr);
-                                if (exprResult.bool === false) {
-                                    output = false
-                                }
-                            }
-                            if (output && entry.literal) {
-                                postLines.push(...entry.literal)
-                            }
-                        })
-                        defines = [...defines, ...postLines];
-                    }
+                let skipProp = false
+                if (property.condition) {
+                    const expr = parseExpression(property.condition)
+                    const exprResult = evaluateExpression(expr);
+                    skipProp = exprResult.skip || !exprResult.bool
                 }
-                else {
-                    let propertyValue = property.control.choices.find(choice => choice.key === config.value);
-                    configKey += ':' + propertyValue.key
-                    if (property.preamble) {
-                        defines = [...defines, ...(property.preamble.map((pre) => pre.replace('{v}', propertyValue.value)))];
-                    }
-                    if (property.define) {
-                        defines = [...defines, '#define ' + property.define + ' ' + propertyValue.defineValue];
-                    }
-                    if (propertyValue.defineLine) {
-                        defines = [...defines, propertyValue.defineLine];
-                    }
-                    if (propertyValue.additionalLines) {
-                        defines = [...defines, ...propertyValue.additionalLines];
-                    }
-                    if (property.postamble) {
-                        const postLines = []
-                        property.postamble.forEach(entry => {
-                            let output = true
-                            if (entry.condition) {
-                                const expr = parseExpression(entry.condition)
+                if (!skipProp) {
+                    if (property.control.type === 'textinput') {
+                        if (property.preamble) {
+                            defines = [...defines, ...property.preamble];
+                        }
+                        property.control.choices.forEach(choice => {
+                            let skip = false
+                            if (choice.condition) {
+                                const expr = parseExpression(choice.condition)
                                 const exprResult = evaluateExpression(expr);
-                                if (exprResult.bool === false) {
-                                    output = false
+                                skip = exprResult.skip || !exprResult.bool
+                            }
+
+                            if (!skip) {
+                                let configVal = config.value.find(cfgval => cfgval.key === choice.key);
+                                let val = (configVal ? configVal.value : null) || getDefaultValue(choice.defaultValue) || '';
+                                configKey += choice.key + val + ':'
+                                defineLine = choice.defineLine.replace('{0}', val);
+                                while (defineLine.indexOf('{0}') >= 0) {
+                                    defineLine = defineLine.replace('{0}', val);
+                                }
+                                const defineLines = defineLine.split('\n')
+                                defines = [...defines, ...defineLines];
+                                if (choice.additionalLines) {
+                                    defines = [...defines, ...choice.additionalLines];
                                 }
                             }
-                            if (output && entry.literal) {
-                                postLines.push(...entry.literal.map(e => e.replace('{v}', propertyValue.defineValue)))
-                            }
                         })
-                        defines = [...defines, ...postLines];
+                        if (property.postamble) {
+                            const postLines = []
+                            property.postamble.forEach(entry => {
+                                let output = true
+                                if (entry.condition) {
+                                    const expr = parseExpression(entry.condition)
+                                    const exprResult = evaluateExpression(expr);
+                                    if (exprResult.bool === false) {
+                                        output = false
+                                    }
+                                }
+                                if (output && entry.literal) {
+                                    postLines.push(...entry.literal)
+                                }
+                            })
+                            defines = [...defines, ...postLines];
+                        }
+                    }
+                    else {
+                        let propertyValue = property.control.choices.find(choice => choice.key === config.value);
+                        configKey += ':' + propertyValue.key
+                        if (property.preamble) {
+                            defines = [...defines, ...(property.preamble.map((pre) => pre.replace('{v}', propertyValue.value)))];
+                        }
+                        if (property.define) {
+                            defines = [...defines, '#define ' + property.define + ' ' + propertyValue.defineValue];
+                        }
+                        if (propertyValue.defineLine) {
+                            defines = [...defines, propertyValue.defineLine];
+                        }
+                        if (propertyValue.additionalLines) {
+                            defines = [...defines, ...propertyValue.additionalLines];
+                        }
+                        if (property.postamble) {
+                            const postLines = []
+                            property.postamble.forEach(entry => {
+                                let output = true
+                                if (entry.condition) {
+                                    const expr = parseExpression(entry.condition)
+                                    const exprResult = evaluateExpression(expr);
+                                    if (exprResult.bool === false) {
+                                        output = false
+                                    }
+                                }
+                                if (output && entry.literal) {
+                                    postLines.push(...entry.literal.map(e => e.replace('{v}', propertyValue.defineValue)))
+                                }
+                            })
+                            defines = [...defines, ...postLines];
+                        }
                     }
                 }
             }
@@ -1657,14 +1613,14 @@ const WizardStep = (props) => {
             switch (stepControl.type) {
                 case 'combo':
                     control = <Select key={controlKey} onSelect={(e) => onSelect(stepIndex, e)}>
-                        {stepControl.choices.map((ch) => <Select.Option value={ch.key}>{ch.value}</Select.Option>)}
+                        {enabledChoices(stepControl.choices).map((ch) => <Select.Option value={ch.key}>{ch.value}</Select.Option>)}
                     </Select>
 
                     break;
 
                 case 'radio':
                     control = <Radio.Group key={controlKey} onChange={(e) => onSelect(stepIndex, e.target.value)} buttonStyle='solid'>
-                        {stepControl.choices.map((ch) => <Radio.Button value={ch.key}>{ch.value}</Radio.Button>)}
+                        {enabledChoices(stepControl.choices).map((ch) => <Radio.Button value={ch.key}>{ch.value}</Radio.Button>)}
                     </Radio.Group>
 
                     break;
@@ -1673,7 +1629,7 @@ const WizardStep = (props) => {
                     control = <List
                         bordered
                         itemLayout='horizontal'
-                        dataSource={stepControl.choices}
+                        dataSource={enabledChoices(stepControl.choices)}
                         renderItem={item =>
                             <List.Item>
                                 <Button key={controlKey} value={item.value} onClick={(e) => onSelect(stepIndex, item.key)} >{item.value}</Button>
@@ -1686,7 +1642,7 @@ const WizardStep = (props) => {
 
                 case 'textinput':
                     control = <>
-                        {stepControl.choices.map(input =>
+                        {enabledChoices(stepControl.choices).map(input =>
                             <div style={{ marginBottom: '10pt' }}>
                                 <Input key={controlKey + input.key} addonBefore={input.label} placeholder={input.label} defaultValue={getDefaultValue(input.defaultValue)} onChange={(e) => onChangedText(stepIndex, input.key, e.target.value)} />
                             </div>
