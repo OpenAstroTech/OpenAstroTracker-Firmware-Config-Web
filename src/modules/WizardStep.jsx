@@ -20,15 +20,15 @@ const Defaults = {
     HoldPercentage: { BY: 0, N9: 10, N8: 10, N49: 10, N48: 10 },
     Speed: { BY: 400, N9: 1800, N8: 1800, N49: 1200, N48: 1200 },
     Acceleration: { BY: 600, N9: 3000, N8: 3000, N49: 3000, N48: 3000 },
-    RASlewMicrostepping: { BY: 1, N9: 8, N8: 16 },
+    RASlewMicrostepping: { BY: 1, N9: 16, N8: 16 },
     RATrackMicrostepping: { BY: 1, N9: 256, N8: 256 },
-    DECSlewMicrostepping: { BY: 1, N9: 8, N8: 16 },
+    DECSlewMicrostepping: { BY: 1, N9: 16, N8: 16 },
     DECGuideMicrostepping: { BY: 1, N9: 256, N8: 256 },
     FocuserMicrostepping: { BY: 1, N9: 8, N8: 8, N49: 8, N48: 8 },
     AZALTMicrostepping: { BY: 1, N9: 16, N8: 16 },
     OAMSpeed: { N9: 2.0, N8: 2.0, N9O: 2.0, N8O: 2.0 },
     OAMAcceleration: { N9: 2.0, N8: 2.0, N9O: 2.0, N8O: 2.0 },
-    OAMMicrostepping: { N9: 64, N8: 64, N9O: 64, N8O: 64 },
+    OAMMicrostepping: { N9: 128, N8: 128, N9O: 128, N8O: 128 },
     RAHallSensorPin: { OAT: 53, OAM: 27 },
 }
 
