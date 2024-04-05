@@ -444,9 +444,9 @@ const WizardStep = (props) => {
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define RA_STEPPER_SPR  2048.0f // steps/rev',], condition: "$stepperlib != N" },
-                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE' },
-                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define RA_STEPPER_SPR 200.0f'] },
+                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define RA_STEPPER_SPR  2048.0f // steps/rev',], condition: "$stepperlib != N" },
+                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED' },
+                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define RA_STEPPER_SPR 200.0f'] },
                 ]
             },
         },
@@ -466,13 +466,13 @@ const WizardStep = (props) => {
                 type: 'radioimg',
                 choices: [
                     {
-                        key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE',
+                        key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED',
                         additionalLines: [
                             '#define RA_STEPPER_SPR                 (400 * 9)',
                         ]
                     },
                     {
-                        key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE',
+                        key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED',
                         additionalLines: [
                             '#define RA_STEPPER_SPR                 (200 * 9)',
                         ]
@@ -606,16 +606,16 @@ const WizardStep = (props) => {
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define DEC_STEPPER_SPR 2048.0f'], condition: "($tracker == OAT) AND ($stepperlib != N)" },
-                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE', condition: "$tracker == OAT" },
-                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define DEC_STEPPER_SPR 200.0f'], condition: "$tracker == OAT" },
-                    { key: 'N49', value: 'NEMA 14, 0.9°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLE', condition: "$tracker == OAT" },
-                    { key: 'N48', value: 'NEMA 14, 1.8°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define DEC_STEPPER_SPR 200.0f'], condition: "$tracker == OAT" },
+                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define DEC_STEPPER_SPR 2048.0f'], condition: "($tracker == OAT) AND ($stepperlib != N)" },
+                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED', condition: "$tracker == OAT" },
+                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define DEC_STEPPER_SPR 200.0f'], condition: "$tracker == OAT" },
+                    { key: 'N49', value: 'NEMA 14, 0.9°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLED', condition: "$tracker == OAT" },
+                    { key: 'N48', value: 'NEMA 14, 1.8°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define DEC_STEPPER_SPR 200.0f'], condition: "$tracker == OAT" },
                     {
                         key: 'N9O',
                         value: 'NEMA 17, 0.9°/step',
                         image: '/images/nema17.png',
-                        defineValue: 'STEPPER_TYPE_ENABLE',
+                        defineValue: 'STEPPER_TYPE_ENABLED',
                         condition: "$tracker == OAM",
                         additionalLines: ['#define DEC_STEPPER_SPR                (400 * 9)']
                     },
@@ -623,7 +623,7 @@ const WizardStep = (props) => {
                         key: 'N8O',
                         value: 'NEMA 17, 1.8°/step',
                         image: '/images/nema17.png',
-                        defineValue: 'STEPPER_TYPE_ENABLE',
+                        defineValue: 'STEPPER_TYPE_ENABLED',
                         condition: "$tracker == OAM",
                         additionalLines: ['#define DEC_STEPPER_SPR                (200 * 9)']
                     },
@@ -938,11 +938,11 @@ const WizardStep = (props) => {
             control: {
                 type: 'radioimg',
                 choices: [
-                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define FOCUS_STEPPER_SPR 2048.0f'] },
-                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE' },
-                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define FOCUS_STEPPER_SPR 200.0f'] },
-                    { key: 'N49', value: 'NEMA 14, 0.9°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLE' },
-                    { key: 'N48', value: 'NEMA 14, 1.8°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLE', additionalLines: ['#define FOCUS_STEPPER_SPR 200.0f'] },
+                    { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define FOCUS_STEPPER_SPR 2048.0f'] },
+                    { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED' },
+                    { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define FOCUS_STEPPER_SPR 200.0f'] },
+                    { key: 'N49', value: 'NEMA 14, 0.9°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLED' },
+                    { key: 'N48', value: 'NEMA 14, 1.8°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define FOCUS_STEPPER_SPR 200.0f'] },
                 ]
             },
         },
