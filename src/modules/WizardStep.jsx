@@ -15,7 +15,7 @@ import { parseExpression } from './parser.js'
 const { Step } = Steps;
 
 const Defaults = {
-    PowerRating: { BY: 150, N9: 1800, N8: 1800, N9O: 1800, N8O: 1800, N49: 400, N48: 400 },
+    PowerRating: { BY: 150, N9: 900, N8: 900, N9O: 900, N8O: 900, N49: 400, N48: 400 },
     PowerUtilization: { BY: 100, N9: 90, N8: 90, N9O: 90, N8O: 90, N49: 90, N48: 90 },
     HoldPercentage: { BY: 0, N9: 10, N8: 10, N49: 10, N48: 10 },
     Speed: { BY: 400, N9: 1800, N8: 1800, N49: 1200, N48: 1200 },
