@@ -760,7 +760,7 @@ const WizardStep = (props) => {
         {
             id: 'DY',
             title: 'Display',
-            label: 'What kind of display are you using:',
+            label: 'What kind of interactive display are you using:',
             variable: 'display',
             define: 'DISPLAY_TYPE',
             preamble: ['////////////////////////////////', '// Display configuration ', '// Define the type of display we are using. Currently: {v}'],
@@ -774,6 +774,30 @@ const WizardStep = (props) => {
                     { key: 'S13', value: 'I2C 32x128 OLED w/ joystick', image: '/images/ssd1306.png', defineValue: 'DISPLAY_TYPE_LCD_JOY_I2C_SSD1306' },
                 ]
             },
+        },
+        {
+            id: 'IDY',
+            title: 'Informational Display',
+            label: 'What kind of information display are you using:',
+            variable: 'infodisplay',
+            condition: "($display == NO)",
+            preamble: ['////////////////////////////////', '// InfoDisplay configuration ', '// Define the type of info display we are using. Currently: {v}'],
+            control: {
+                type: 'radioimg',
+                choices: [
+                    { key: 'NO', value: 'No info display', image: '/images/none.png', additionalLines: ['#define INFO_DISPLAY_TYPE          INFO_DISPLAY_TYPE_NONE'] },
+                    { key: 'OLED', value: 'I2C 128x64 OLED display', image: '/images/oledsmall.png', additionalLines: ['#define INFO_DISPLAY_TYPE          INFO_DISPLAY_TYPE_I2C_SSD1306_128x64'] },
+                ]
+            },
+            postamble: [
+                { literal: ['#define INFO_DISPLAY_I2C_ADDRESS   0x3C'] },
+                { literal: ['#define INFO_DISPLAY_I2C_SDA_PIN   20'] },
+                { literal: ['#define INFO_DISPLAY_I2C_SCL_PIN   21'] },
+                {
+                    literal: ['// Note that the E1 port is not usable since I2C requires pin 21!'],
+                    condition: "($board == M10) OR ($board == M20) OR ($board == M21)",
+                },
+            ],
         },
         {
             id: 'WW',
@@ -1082,7 +1106,7 @@ const WizardStep = (props) => {
                     '// AZ parameters will require tuning according to your setup',
                     '',
                     '// If you have a custom solution involving a rod you can uncomment and use the next 3 lines for calculations',
-                    '// #define AZ_CIRCUMFERENCE        (115 * 2 * 3.1515927) // the circumference of the circle where the movement is anchored',
+                    '// #define AZ_CIRCUMFERENCE        (115 * 2 * 3.1415927) // the circumference of the circle where the movement is anchored',
                     '// #define AZ_ROD_PITCH            1.0f                  // mm per full rev of stepper',
                     '// #define AZIMUTH_STEPS_PER_REV   (AZ_CIRCUMFERENCE / AZ_ROD_PITCH * AZ_STEPPER_SPR * AZ_MICROSTEPPING)  // Steps needed to turn AZ 360deg',
                     '',
