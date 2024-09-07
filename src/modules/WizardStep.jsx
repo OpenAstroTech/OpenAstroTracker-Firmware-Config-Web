@@ -742,6 +742,21 @@ const WizardStep = (props) => {
             },
         },
         {
+            id: 'DLO',
+            title: 'DEC Movement Limits',
+            label: 'These are required settings to determine how far DEC can move from the Home position without hitting any hardware limits (if you have endswitches, you can set this to 180):',
+            variable: 'declimits',
+            condition: "$tracker == OAM",
+            preamble: ['// Define DEC limits'],
+            define: '',
+            control: {
+                type: 'textinput',
+                choices: [
+                    { key: 'N', label: 'Degrees DEC can move from Home', defaultValue: '170', defineLine: '#define DEC_LIMIT_UP   {0} // degrees from Home\n#define DEC_LIMIT_DOWN {0}' },
+                ]
+            },
+        },
+        {
             id: 'STL',
             title: 'Stepper Stealth Mode',
             label: 'What mode do you want to run the RA and DEC steppers in? If Stealth Mode, they will be inaudible (when not slewing), but have slightly lower performance. In Normal mode, they will make a soft hissing sound, but will have better performance.',
