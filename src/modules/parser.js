@@ -106,7 +106,7 @@ const parseExpression = (expr) => {
           rhsexpr = '';
         }
         else if (state !== IDLE) {
-          console.log("Unexpected whitespace in state" + state)
+          console.log("Unexpected whitespace in state " + state + '. Parsing: '+expr+' at '+index)
         }
         break;
 
