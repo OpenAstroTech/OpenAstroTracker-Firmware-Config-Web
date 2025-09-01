@@ -37,6 +37,12 @@ body {
 .image-column {
   margin-left: 40pt;
   max-width: 180px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.image-column:hover {
+  transform: scale(1.05);
 }
 
 .list-container {
@@ -62,9 +68,9 @@ body {
 }
 
 .version {
-  color:gray;
-  font-size:smaller;
-  margin-top:3rem;
+  color:white;
+  font-size: 1rem;
+  margin-top:6rem;
 }
 .bg-dim {
   width: 100%;
@@ -85,17 +91,22 @@ body {
   padding-top: 10pt;
   padding-bottom: 10pt;
   border-radius: 50pt;
-  background: rgba(25, 181, 254, 1);
   font-size: 20pt;
+  background: rgb(19, 141, 197);
   color: #ffffff;
   border: 2px solid rgb(255, 255, 255);
   animation: fadeIn ease 5s;
   -webkit-animation: fadeIn ease 5s;
+  transition: all 0.3s ease;
+  transform: scale(1);
+  display: inline-block;
+  text-decoration: none;
 }
 
 .intro-link:hover {
-  background: rgb(68, 180, 231);
-  color: #000000;
+  background: rgba(25, 181, 254, 1);
+  color: white;
+  transform: scale(1.05);
 }
 
 .intro-link-parent {
