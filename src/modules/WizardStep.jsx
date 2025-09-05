@@ -192,10 +192,21 @@ const WizardStep = (props) => {
     }, [advanceStep]);
 
     const goBackInHistory = () => {
-        const newStepIndex = stepHistory[stepHistory.length - 1];
-        const newStepHistory = stepHistory.slice(0, -1);
-        setStepHistory(newStepHistory);
-        setStepIndex(newStepIndex);
+    const newStepIndex = stepHistory[stepHistory.length - 1];
+    const newStepHistory = stepHistory.slice(0, -1);
+    const preservedVariables = new Set();
+    for (let i = 0; i <= newStepIndex; i++) {
+        preservedVariables.add(stepProps[i].variable);
+    }
+
+    //add variable to preserved list
+    ['autopa', 'autopaversion', 'stepperlib'].forEach(v => preservedVariables.add(v));
+    const newConfiguration = configuration.filter(config => preservedVariables.has(config.variable));
+
+    setConfiguration(newConfiguration);
+    setStepHistory(newStepHistory);
+    setStepIndex(newStepIndex);
+
     }
 
     const download = (filename, lines) => {
@@ -232,7 +243,14 @@ const WizardStep = (props) => {
     }
 
     const onSelect = (index, e) => {
-        let newConfiguration = configuration.filter(config => config.variable !== stepProps[index].variable)
+        let newConfiguration;
+        if (stepProps[index].variable === 'tracker') {
+            // if user changes tracker, reset configuration
+            newConfiguration = [];
+        } else {
+            // Otherwise, only remove the modified variable
+            newConfiguration = configuration.filter(config => config.variable !== stepProps[index].variable);
+        }
         let newVariables = [{ variable: stepProps[index].variable, value: e }]
 
         const chosenOption = stepProps[index].control.choices.find(c => c.key === e);
@@ -263,7 +281,16 @@ const WizardStep = (props) => {
                 let prop = stepProps[index];
                 // console.log("Next step: ", prop)
                 let newConfig = prop.control.choices.map((v) => { return { key: v.key, value: getDefaultValue(v.defaultValue) || '' } });
-                let newConfiguration = configuration.filter(config => config.variable !== stepProps[index].variable);
+				const currentVar = stepProps[index].variable;
+				let newConfiguration;
+				if (currentVar === 'tracker') {
+					newConfiguration = [];
+				} else if (currentVar === 'board') {
+					const preservedVars = ['tracker', 'board', 'autopa', 'autopaversion', 'stepperlib'];
+					newConfiguration = configuration.filter(config => preservedVars.includes(config.variable));
+				} else {
+					newConfiguration = configuration.filter(config => config.variable !== currentVar);
+				}
                 let newVariables = [{ variable: prop.variable, value: newConfig }]
                 newConfiguration = [...newConfiguration, ...newVariables]
                 setConfiguration(newConfiguration);
@@ -275,7 +302,16 @@ const WizardStep = (props) => {
             let currentConfig = configuration.find(config => config.variable === stepProps[index].variable) || { value: [] };
             let newConfig = currentConfig.value.filter(config => config.key !== key);
             newConfig = [...newConfig, { key: key, value: val }];
-            let newConfiguration = configuration.filter(config => config.variable !== stepProps[index].variable);
+    const currentVar = stepProps[index].variable;
+    let newConfiguration;
+    if (currentVar === 'tracker') {
+        newConfiguration = [];
+    } else if (currentVar === 'board') {
+        const preservedVars = ['tracker', 'board', 'autopa', 'autopaversion', 'stepperlib'];
+        newConfiguration = configuration.filter(config => preservedVars.includes(config.variable));
+    } else {
+        newConfiguration = configuration.filter(config => config.variable !== currentVar);
+    }
             newConfiguration = [...newConfiguration, { variable: stepProps[index].variable, value: newConfig }]
             setConfiguration(newConfiguration);
         }
@@ -354,36 +390,27 @@ const WizardStep = (props) => {
             return exprResult.bool
         })
     }
-
     let steps = [];
-
-    stepProps.forEach((step, index) => {
-        let title = step.title;
-        let description;
-        if (index < stepIndex) {
-            let foundConfig = configuration.find(config => config.variable === stepProps[index].variable);
-            if (foundConfig && !Array.isArray(foundConfig.value)) {
-                if (stepProps[index].control) {
-                    let foundControl = stepProps[index].control.choices.find(choice => foundConfig.value === choice.key);
-                    if (!foundControl) {
-                        console.log("Could not find control ", foundConfig)
-                    } else {
-                        description = foundControl.value;
-                    }
-                }
-            }
-        }
-
-        let skipState = shouldSkipStep(index);
-        if ((skipState.skip) && (index < stepIndex)) {
-            description = "N/A, skipped.";
-        }
-
-        if ((!skipState.skip) || (index <= stepIndex)) {
-            steps.push(<Step size="small" title={title} description={description} />)
-        }
-    });
-
+	stepProps.forEach((step, index) => {
+		let title = step.title;
+		let description = "N/A, skipped.";
+		let foundConfig = configuration.find(config => config.variable === step.variable);
+		if (foundConfig) {
+			if (!Array.isArray(foundConfig.value)) {
+				const control = step.control;
+				const foundControl = control?.choices?.find(choice => choice.key === foundConfig.value);
+				if (foundControl) {
+					description = foundControl.value;
+				}
+			} else {
+				description = 'Custom Value';
+			}
+		let skipState = shouldSkipStep(index);
+		const showStep = !skipState.skip || index <= stepIndex;
+		if (showStep) {
+			steps.push(<Step size="small" title={title} description={description} />);
+		}
+}});
     steps.push(<Step title='Completed' />)
 
     if (showResult) {
