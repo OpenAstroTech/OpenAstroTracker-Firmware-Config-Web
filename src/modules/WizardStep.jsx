@@ -24,6 +24,27 @@ function WizardException(message) {
     };
 }
 const WizardStep = (props) => {
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      e.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.history.pushState(null, '', window.location.href);
+
+    const onPopState = () => {
+      window.history.pushState(null, '', window.location.href);
+    };
+    window.addEventListener('popstate', onPopState);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', onPopState);
+    };
+  }, []);
+
     const [stepIndex, setStepIndex] = useState(-1);
     const [showResult, setShowResult] = useState(false);
     const [configuration, setConfiguration] = useState([]);
