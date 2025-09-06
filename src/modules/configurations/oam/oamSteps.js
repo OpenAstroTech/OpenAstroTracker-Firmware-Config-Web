@@ -6,7 +6,6 @@ import {
     createBoardStep,
     createRADriverStep,
     createRAPulleyTeethStep,
-    createDECStepperStep,
     createDECDriverStep,
     createDECPulleyTeethStep,
     createStepperStealthModeStep,
@@ -14,7 +13,8 @@ import {
     createInfoDisplayStep,
     createWiFiSteps,
     createFocuserSteps,
-    createHallSensorSteps
+    createHallSensorSteps,
+    createAutoPASteps
 } from '../base/commonSteps.js';
 import { Defaults } from '../base/sharedDefaults.js';
 
@@ -103,7 +103,36 @@ export const getOAMSteps = () => [
     },
     createTrackingOnBootStep(),
     createRAPulleyTeethStep(),
-    createDECStepperStep(),
+    {
+        id: 'DSM',
+        title: 'DEC Stepper',
+        label: 'Which stepper motor are you using for DEC:',
+        variable: 'decstpr',
+        preamble: ['////////////////////////////////', '// DEC Stepper configuration ', '// See supported stepper values. Change according to the steppers you are using', '// Using the {v} stepper for DEC'],
+        define: 'DEC_STEPPER_TYPE',
+        control: {
+            type: 'radioimg',
+            choices: [
+                {
+                    key: 'N9O',
+                    value: 'NEMA 17, 0.9°/step',
+                    image: '/images/nema17.png',
+                    defineValue: 'STEPPER_TYPE_ENABLED',
+                     additionalLines: ['#define DEC_STEPPER_SPR                (400 * 9)']
+                },
+                {
+                    key: 'N8O',
+                    value: 'NEMA 17, 1.8°/step',
+                    image: '/images/nema17.png',
+                    defineValue: 'STEPPER_TYPE_ENABLED',
+                    additionalLines: ['#define DEC_STEPPER_SPR                (200 * 9)']
+                },
+            ]
+        },
+        postamble: [{
+            literal: ['#define DEC_WHEEL_CIRCUMFERENCE        816.814f'],
+        }],
+    },
     createDECDriverStep(),
     {
         id: 'DAM',
@@ -243,5 +272,5 @@ export const getOAMSteps = () => [
             ]
         },
     },
-
+    ...createAutoPASteps()
 ];
