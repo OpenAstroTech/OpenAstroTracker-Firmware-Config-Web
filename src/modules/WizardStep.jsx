@@ -176,16 +176,13 @@ const WizardStep = (props) => {
     }
 
     useEffect(() => {
-        // On ajoute une entrée à l'historique à chaque changement de stepIndex
         if (stepIndex >= 0) {
-            window.history.pushState({ stepIndex }, '', '');
+            window.history.replaceState({ stepIndex }, '', window.location.pathname + window.location.search);
         }
 
         const onPopState = (event) => {
-            // Si on a une entrée d'historique, on restaure le stepIndex
             if (event.state && typeof event.state.stepIndex === 'number') {
-                // On revient à l'étape précédente
-                goBackInHistory();
+                setStepIndex(event.state.stepIndex);
             }
         };
 
@@ -679,9 +676,6 @@ const WizardStep = (props) => {
                 <div className='step-description'>{stepProps[stepIndex].label}</div>
                 <div>
                     {control}
-                </div>
-                <div className='back-button' >
-                    <Button type='primary' onClick={() => goBackInHistory()} disabled={stepIndex < 1}>Back</Button>
                 </div>
             </div>
         </div>
