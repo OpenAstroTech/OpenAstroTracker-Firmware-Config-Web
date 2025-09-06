@@ -24,27 +24,6 @@ function WizardException(message) {
     };
 }
 const WizardStep = (props) => {
-  useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      e.returnValue = '';
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    window.history.pushState(null, '', window.location.href);
-
-    const onPopState = () => {
-      window.history.pushState(null, '', window.location.href);
-    };
-    window.addEventListener('popstate', onPopState);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.removeEventListener('popstate', onPopState);
-    };
-  }, []);
-
     const [stepIndex, setStepIndex] = useState(-1);
     const [showResult, setShowResult] = useState(false);
     const [configuration, setConfiguration] = useState([]);
@@ -195,6 +174,27 @@ const WizardStep = (props) => {
 
         return { atEnd: index >= stepProps.length, skip: startIndex !== index, nextIndex: index };
     }
+
+    useEffect(() => {
+        // On ajoute une entrée à l'historique à chaque changement de stepIndex
+        if (stepIndex >= 0) {
+            window.history.pushState({ stepIndex }, '', '');
+        }
+
+        const onPopState = (event) => {
+            // Si on a une entrée d'historique, on restaure le stepIndex
+            if (event.state && typeof event.state.stepIndex === 'number') {
+                // On revient à l'étape précédente
+                goBackInHistory();
+            }
+        };
+
+        window.addEventListener('popstate', onPopState);
+
+        return () => {
+            window.removeEventListener('popstate', onPopState);
+        };
+    }, [stepIndex]);
 
     useEffect(() => {
         let nextStepIndex = stepIndex + 1;
