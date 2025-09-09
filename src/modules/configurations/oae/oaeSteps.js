@@ -6,6 +6,7 @@ import {
     createRADriverStep,
     createRAPulleyTeethStep,
     createDECDriverStep,
+    createTrackingOnBootStep,
     createStepperStealthModeStep,
     createWiFiSteps,
     createFocuserSteps,
