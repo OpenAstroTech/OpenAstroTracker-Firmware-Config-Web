@@ -169,6 +169,7 @@ export const getOAESteps = () => [
             ]
         }]
     },
+    createTrackingOnBootStep(),
     createStepperStealthModeStep(),
     ...createWiFiSteps(),
     ...createFocuserSteps(),
