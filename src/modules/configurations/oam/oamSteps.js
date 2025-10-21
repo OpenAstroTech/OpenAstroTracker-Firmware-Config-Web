@@ -146,6 +146,97 @@ export const getOAMSteps = () => [
             ]
         },
     },
+    {
+        id: 'ZST',
+        title: 'Azimuth Stepper',
+        label: 'Which stepper motor are you using for the Azimuth:',
+        variable: 'az',
+        condition: "($autopa == Y)",
+        preamble: ['// Using the {v} stepper for AZ'],
+        define: 'AZ_STEPPER_TYPE',
+        control: {
+            type: 'radioimg',
+            choices: [
+                { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED' },
+                { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define AZ_STEPPER_SPR 200.0f'] },
+                { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48mod.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define AZ_STEPPER_SPR 2048.0f'] },
+            ]
+        },
+    },
+    {
+        id: 'ZD',
+        title: 'Azimuth Driver',
+        label: 'Which stepper driver are you using to drive the Azimuth stepper motor:',
+        variable: 'azdrv',
+        condition: "($autopa == Y)",
+        preamble: ['// Using the {v} driver for AZ stepper motor'],
+        define: 'AZ_DRIVER_TYPE',
+        control: {
+            type: 'radioimg',
+            choices: [
+                { key: 'TU', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
+                { key: 'TS', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
+                { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
+            ]
+        },
+    },
+    {
+        id: 'ZA',
+        title: 'Azimuth Advanced Settings',
+        label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the AZ stepper specs and desired settings:',
+        variable: 'azpower',
+        condition: "($azdrv == TU)",
+        preamble: ['// Define AZ stepper motor power settings'],
+        postamble: [{
+            literal: [
+                '#define AZ_STEPPER_SPEED             1000',
+                '#define AZ_STEPPER_ACCELERATION      500',
+                '',
+                '',
+                '///////////////////////////////',
+                '// AZ parameters will require tuning according to your setup',
+                '',
+                '// If you have a custom solution involving a rod you can uncomment and use the next 3 lines for calculations',
+                '// #define AZ_CIRCUMFERENCE        (115 * 2 * 3.1415927) // the circumference of the circle where the movement is anchored',
+                '// #define AZ_ROD_PITCH            1.0f                  // mm per full rev of stepper',
+                '// #define AZIMUTH_STEPS_PER_REV   (AZ_CIRCUMFERENCE / AZ_ROD_PITCH * AZ_STEPPER_SPR * AZ_MICROSTEPPING)  // Steps needed to turn AZ 360deg',
+                '',
+                '// If you have a belt drive solution, you can uncomment and use the next 2 lines for calculations',
+                '// #define AZ_CIRCUMFERENCE        (725)  // the circumference of the circle where the movement is anchored',
+                '// #define AZ_PULLEY_TEETH         16',
+                '',
+                '// Is it going the wrong way?',
+                '#define AZ_INVERT_DIR 0'
+            ]
+        }],
+        define: '',
+        control: {
+            type: 'textinput',
+            choices: [
+                { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.az}', defineLine: '#define AZ_MOTOR_CURRENT_RATING      {0} // mA' },
+                { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.az}', defineLine: '#define AZ_OPERATING_CURRENT_SETTING {0} // %' },
+                { key: 'S', label: 'Microstepping setting', defaultValue: '{Defaults.AZALTMicrostepping.az}', defineLine: '#define AZ_MICROSTEPPING             {0} // steps' },
+                { key: 'H', label: 'Hold current percentage (0 to power down)', defaultValue: '{Defaults.HoldPercentage.az}', defineLine: '#define AZ_MOTOR_HOLD_SETTING        {0} // %' },
+            ]
+        },
+    },
+    {
+        id: 'ZAO',
+        title: 'Azimuth Always On',
+        label: 'It is possible to keep the azimuth motor energized at all times to prevent any shifting in position. This is not necessarily needed for 28BYJ motors, however it is recommended for NEMAs when using AutoPA V2.0.',
+        variable: 'azalwayson',
+        condition: "($autopa == Y)",
+        preamble: ['// Define AZ always-on'],
+        define: 'AZ_ALWAYS_ON',
+        control: {
+            type: 'radioimg',
+            choices: [
+                { key: 'Y', value: 'Yes', image: '/images/none.png', defineValue: '1' },
+                { key: 'N', value: 'No', image: '/images/none.png', defineValue: '0' },
+            ]
+        },
+    },
+
     createStepperStealthModeStep(),
     createDisplayStep(),
     createInfoDisplayStep(),
