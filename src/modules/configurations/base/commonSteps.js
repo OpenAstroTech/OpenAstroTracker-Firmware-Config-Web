@@ -155,24 +155,49 @@ export const createDECStepperStep = () => ({
         type: 'radioimg',
         choices: [
             { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define DEC_STEPPER_SPR 2048.0f'], condition: "($stepperlib != N)" },
-            { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED' },
-            { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define DEC_STEPPER_SPR 200.0f'] },
-            { key: 'N49', value: 'NEMA 14, 0.9°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLED' },
-            { key: 'N48', value: 'NEMA 14, 1.8°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define DEC_STEPPER_SPR 200.0f'] },
+            { 
+                key: 'N9', 
+                value: 'NEMA 17, 0.9°/step', 
+                image: '/images/nema17.png', 
+                defineValue: 'STEPPER_TYPE_ENABLED',
+                condition: "($tracker == OAT)",
+            },
+            { 
+                key: 'N8', 
+                value: 'NEMA 17, 1.8°/step', 
+                image: '/images/nema17.png', 
+                defineValue: 'STEPPER_TYPE_ENABLED',                 
+                condition: "($tracker == OAT)",
+                additionalLines: ['#define DEC_STEPPER_SPR 200.0f'] 
+            },
+            { 
+                key: 'N49', 
+                value: 'NEMA 14, 0.9°/step', 
+                image: '/images/nema14.png', 
+                defineValue: 'STEPPER_TYPE_ENABLED',
+                condition: "($tracker == OAT)",
+            },
+            { 
+                key: 'N48', 
+                value: 'NEMA 14, 1.8°/step', 
+                image: '/images/nema14.png', 
+                defineValue: 'STEPPER_TYPE_ENABLED', 
+                condition: "($tracker == OAT)",
+                additionalLines: ['#define DEC_STEPPER_SPR 200.0f'] },
             {
                 key: 'N9O',
                 value: 'NEMA 17, 0.9°/step',
                 image: '/images/nema17.png',
                 defineValue: 'STEPPER_TYPE_ENABLED',
-
-                additionalLines: ['#define DEC_STEPPER_SPR                (400 * 9)']
+                condition: "($tracker == OAM)",
+                additionalLines: ['#define DEC_STEPPER_SPR                (400 * 9)'],
             },
             {
                 key: 'N8O',
                 value: 'NEMA 17, 1.8°/step',
                 image: '/images/nema17.png',
                 defineValue: 'STEPPER_TYPE_ENABLED',
-
+                condition: "($tracker == OAM)",
                 additionalLines: ['#define DEC_STEPPER_SPR                (200 * 9)']
             },
         ]
@@ -222,7 +247,7 @@ export const createDECPulleyTeethStep = () => ({
 export const createStepperStealthModeStep = () => ({
     id: 'STL',
     title: 'Stepper Stealth Mode',
-    label: 'What mode do you want to run the RA and DEC steppers in? If Stealth Mode, they will be inaudible (when not slewing), but have slightly lower performance. In Normal mode, they will make a soft hissing sound, but will have better performance.',
+    label: 'What mode do you want to run the RA and DEC steppers in? If Stealth Mode, they will be inaudible (when not slewing), but have slightly lower performance. In Normal mode, they will make a soft hissing sound, but will have better performance. \nAZ and ALT are always set to Stealth mode.',
     variable: 'stealhmode',
     condition: "($radrv == TU) AND ($decdrv == TU)",
     preamble: ['// TMC2209 Stealth Mode (spreadCycle) - When set to 0, tracking is more precise, but noisy (high-pitched hissing sound). When set to 1, they are silent.'],

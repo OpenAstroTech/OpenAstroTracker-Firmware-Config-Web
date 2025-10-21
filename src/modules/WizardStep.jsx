@@ -360,6 +360,8 @@ const WizardStep = (props) => {
     stepProps.forEach((step, index) => {
         let title = step.title;
         let description;
+        
+        // For completed steps (index < stepIndex), show the chosen option
         if (index < stepIndex) {
             let foundConfig = configuration.find(config => config.variable === stepProps[index].variable);
             if (foundConfig && !Array.isArray(foundConfig.value)) {
@@ -371,14 +373,22 @@ const WizardStep = (props) => {
                         description = foundControl.value;
                     }
                 }
+            } else {
+                // If no configuration found for this step, check if it was actually skipped due to conditions
+                // rather than being completed
+                if (stepProps[index].condition) {
+                    const expr = parseExpression(stepProps[index].condition);
+                    const exprResult = evaluateExpression(expr);
+                    if (exprResult.status === 'skip' || !exprResult.bool) {
+                        description = "N/A, skipped.";
+                    }
+                } else {
+                    description = "N/A, skipped.";
+                }
             }
         }
 
         let skipState = shouldSkipStep(index);
-        if ((skipState.skip) && (index < stepIndex)) {
-            description = "N/A, skipped.";
-        }
-
         if ((!skipState.skip) || (index <= stepIndex)) {
             steps.push(<Step size="small" title={title} description={description} />)
         }
