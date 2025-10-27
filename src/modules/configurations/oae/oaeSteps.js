@@ -167,15 +167,101 @@ export const getOAESteps = () => [
                 '#define DEC_ACCEL_SecToFullSpeed RA_ACCEL_SecToFullSpeed',
                 '',
                 '#define DEC_STEPPER_SPEED DEC_SLEWING_SPEED_DEGREE * (DEC_STEPPER_SPR * DEC_SLEW_MICROSTEPPING / 360 ) // * (DEC_WHEEL_CIRCUMFERENCE / (DEC_PULLEY_TEETH * GT2_BELT_PITCH)) / 360)',
-                '#define DEC_STEPPER_ACCELERATION (DEC_STEPPER_SPEED / DEC_ACCEL_SecToFullSpeed)',
-                '// #define DEC_PULLEY_TEETH 1'
+                '#define DEC_STEPPER_ACCELERATION (DEC_STEPPER_SPEED / DEC_ACCEL_SecToFullSpeed)'
             ]
         }]
     },
     createTrackingOnBootStep(),
     createStepperStealthModeStep(),
     ...createWiFiSteps(),
-    ...createFocuserSteps(),
+    createFocuserSteps(),
+    {
+        id: 'FC',
+        title: 'Focuser support',
+        label: 'Do you want to support a focuser with additional board:',
+        variable: 'focuser',
+        condition: "($board IN [M,M10,M20,M21,OAEV1])",
+        preamble: ['////////////////////////////////', '// Focuser configuration ', '// Define whether to support a focusing stepper motor on an additional board or not. Currently: {v}'],
+        define: '',
+        control: {
+            type: 'radioimg',
+            choices: [
+                { key: 'N', value: 'No Focuser', image: '/images/none.png', additionalLines: ['// No Focuser settings'] },
+                { key: 'Y', value: 'Focuser stepper', image: '/images/focuser.png' },
+            ]
+        },
+    },
+    {
+        id: 'FS',
+        title: 'Focuser Stepper',
+        label: 'Which stepper motor are you using for the Focuser:',
+        variable: 'focstpr',
+        condition: "$focuser == Y",
+        preamble: ['// Using the {v} stepper for FOC'],
+        define: 'FOCUS_STEPPER_TYPE',
+        control: {
+            type: 'radioimg',
+            choices: [
+                { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define FOCUS_STEPPER_SPR 2048.0f'] },
+                { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED' },
+                { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define FOCUS_STEPPER_SPR 200.0f'] },
+                { key: 'N49', value: 'NEMA 14, 0.9°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLED' },
+                { key: 'N48', value: 'NEMA 14, 1.8°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define FOCUS_STEPPER_SPR 200.0f'] },
+            ]
+        },
+    },
+    {
+        id: 'FD',
+        title: 'Focuser Driver',
+        label: 'Which driver board are you using to drive the focuser stepper motor:',
+        variable: 'focdrv',
+        condition: "$focuser == Y",
+        preamble: ['// Using the {v} driver for focuser stepper'],
+        define: 'FOCUS_DRIVER_TYPE',
+        control: {
+            type: 'radioimg',
+            choices: [
+                { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
+                { key: 'TU', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
+                { key: 'TS', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
+            ]
+        },
+    },
+    {
+        id: 'FA',
+        title: 'Focuser Advanced Settings',
+        label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the Focus stepper specs and desired settings:',
+        variable: 'focuspower',
+        condition: "$focdrv == TU",
+        preamble: ['// Define Focus stepper motor power settings'],
+        postamble: [{ literal: ['#define FOCUSER_ALWAYS_ON                1'] }],
+        define: '',
+        control: {
+            type: 'textinput',
+            choices: [
+                { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.focstpr}', defineLine: '#define FOCUS_MOTOR_CURRENT_RATING       {0} // mA' },
+                { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.focstpr}', defineLine: '#define FOCUS_OPERATING_CURRENT_SETTING  {0} // %' },
+                { key: 'S', label: 'Microstepping setting', defaultValue: '{Defaults.FocuserMicrostepping.focstpr}', defineLine: '#define FOCUS_MICROSTEPPING              {0} // steps' },
+                { key: 'H', label: 'Hold current percentage (0 to power down)', defaultValue: 10, defineLine: '#define FOCUSER_MOTOR_HOLD_SETTING       {0} // %', additionalLines: ['#define FOCUS_UART_STEALTH_MODE          1 // silent?'] },
+            ]
+        },
+    },
+    {
+        id: 'FMS',
+        title: 'Focuser Motion Settings',
+        label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the Focuser stepper specs and desired settings:',
+        variable: 'focmotion',
+        condition: "$focuser == Y",
+        preamble: ['// Define some focuser stepper motor settings'],
+        define: '',
+        control: {
+            type: 'textinput',
+            choices: [
+                { key: 'A', label: 'Acceleration (steps/s/s)', defaultValue: '{Defaults.Acceleration.focstpr}', defineLine: '#define FOCUS_STEPPER_ACCELERATION {0}' },
+                { key: 'V', label: 'Maximum Speed (steps/s)', defaultValue: '{Defaults.Speed.focstpr}', defineLine: '#define FOCUS_STEPPER_SPEED {0}' },
+            ]
+        },
+    },
     ...createHallSensorSteps(),
     ...createAutoPASteps()
 ];
