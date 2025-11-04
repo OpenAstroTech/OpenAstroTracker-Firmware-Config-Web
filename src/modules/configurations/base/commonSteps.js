@@ -591,8 +591,8 @@ export const createAutoPASteps = () => [
             condition: '$tracker == OAE',
             literal: [
                 '#define AZ_MICROSTEPPING 1',
-                '#define AZ_STEPPER_SPEED 1200',
-                '#define AZ_STEPPER_ACCELERATION 3000'
+                '#define AZ_STEPPER_SPEED 800',
+                '#define AZ_STEPPER_ACCELERATION 2000'
             ]
         }]
     },
@@ -684,7 +684,7 @@ export const createAutoPASteps = () => [
                 '// ALT',
                 '#define ALT_MICROSTEPPING 1',
                 '#define ALT_STEPPER_SPEED 800',
-                '#define ALT_STEPPER_ACCELERATION 3000'
+                '#define ALT_STEPPER_ACCELERATION 2000'
             ]
         }]
     },

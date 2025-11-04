@@ -80,12 +80,12 @@ export const getOAESteps = () => [
             literal: [
                 '',
                 '// Is it going the wrong way?',
-                '#define RA_INVERT_DIR  1',
+                '#define RA_INVERT_DIR  0',
                 '',
                 '// Define some RA stepper motor settings',
                 '',
-                '#define RA_SLEWING_SPEED_DEGREE 3',
-                '#define RA_ACCEL_SecToFullSpeed 1  // Seconds to reach full slewing speed',
+                '#define RA_SLEWING_SPEED_DEGREE 4',
+                '#define RA_ACCEL_SecToFullSpeed 1.5  // Seconds to reach full slewing speed',
                 '',
                 '#define RA_STEPPER_SPEED RA_SLEWING_SPEED_DEGREE * (RA_STEPPER_SPR * RA_SLEW_MICROSTEPPING * (RA_WHEEL_CIRCUMFERENCE / (RA_PULLEY_TEETH * GT2_BELT_PITCH)) / 360)  //3525',
                 '#define RA_STEPPER_ACCELERATION (RA_STEPPER_SPEED / RA_ACCEL_SecToFullSpeed)'
@@ -161,7 +161,7 @@ export const getOAESteps = () => [
             literal: [
                 '',
                 '// Is it going the wrong way?',
-                '#define DEC_INVERT_DIR  0',
+                '#define DEC_INVERT_DIR  1',
                 '',
                 '#define DEC_SLEWING_SPEED_DEGREE RA_SLEWING_SPEED_DEGREE',
                 '#define DEC_ACCEL_SecToFullSpeed RA_ACCEL_SecToFullSpeed',
