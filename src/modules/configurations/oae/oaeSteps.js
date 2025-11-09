@@ -99,7 +99,7 @@ export const getOAESteps = () => [
         label: 'How many teeth does your DEC gear have?',
         variable: 'deccog',
         preamble: ['// Using the {v} for DEC belt'],
-        define: 'DEC_PULLEY_TEETH',
+        define: 'DEC_PULLEY_GEAR',
         control: {
             type: 'radioimg',
             choices: [
@@ -124,14 +124,14 @@ export const getOAESteps = () => [
                     value: 'NEMA 17, 0.9°/step',
                     image: '/images/nema17.png',
                     defineValue: 'STEPPER_TYPE_ENABLED',
-                    additionalLines: ['#define DEC_STEPPER_SPR                (400 * DEC_PULLEY_TEETH * 4.5f)  // change "200" to "400" for 0.9° stepper']
+                    additionalLines: ['#define DEC_STEPPER_SPR                (400 * DEC_PULLEY_GEAR * 4.5f)  // change "400" to "200" for 1.8° stepper']
                 },
                  {
                     key: 'N8O',
                     value: 'NEMA 17, 1.8°/step',
                     image: '/images/nema17.png',
                     defineValue: 'STEPPER_TYPE_ENABLED',
-                    additionalLines: ['#define DEC_STEPPER_SPR                (200 * DEC_PULLEY_TEETH * 4.5f)  // change "400" to "200" for 1.8° stepper']
+                    additionalLines: ['#define DEC_STEPPER_SPR                (200 * DEC_PULLEY_GEAR * 4.5f)  // change "200" to "400" for 0.9° stepper']
                 },
              ]
         },
@@ -167,7 +167,8 @@ export const getOAESteps = () => [
                 '#define DEC_ACCEL_SecToFullSpeed RA_ACCEL_SecToFullSpeed',
                 '',
                 '#define DEC_STEPPER_SPEED DEC_SLEWING_SPEED_DEGREE * (DEC_STEPPER_SPR * DEC_SLEW_MICROSTEPPING / 360 ) // * (DEC_WHEEL_CIRCUMFERENCE / (DEC_PULLEY_TEETH * GT2_BELT_PITCH)) / 360)',
-                '#define DEC_STEPPER_ACCELERATION (DEC_STEPPER_SPEED / DEC_ACCEL_SecToFullSpeed)'
+                '#define DEC_STEPPER_ACCELERATION (DEC_STEPPER_SPEED / DEC_ACCEL_SecToFullSpeed)',
+                '#define DEC_PULLEY_TEETH 1'
             ]
         }]
     },
