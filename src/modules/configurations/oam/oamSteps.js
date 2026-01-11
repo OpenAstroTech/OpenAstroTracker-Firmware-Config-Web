@@ -223,7 +223,7 @@ export const getOAMSteps = () => [
     {
         id: 'ZAO',
         title: 'Azimuth Always On',
-        label: 'It is possible to keep the azimuth motor energized at all times to prevent any shifting in position. This is not necessarily needed for 28BYJ motors, however it is recommended for NEMAs when using AutoPA V2.0.',
+        label: 'It is possible to keep the azimuth motor energized at all times to prevent any shifting in position. It is recommended for NEMAs when using AutoPA V2.0.',
         variable: 'azalwayson',
         condition: "($autopa == Y)",
         preamble: ['// Define AZ always-on'],
@@ -236,7 +236,81 @@ export const getOAMSteps = () => [
             ]
         },
     },
-
+    {
+        id: 'LST',
+        title: 'Altitude Stepper',
+        label: 'Which stepper motor are you using for the Altitude:',
+        variable: 'alt',
+        condition: "($autopa == Y)",
+        preamble: ['// Using the {v} stepper for ALT'],
+        define: 'ALT_STEPPER_TYPE',
+        control: {
+            type: 'radioimg',
+            choices: [
+                { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED' },
+                { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define ALT_STEPPER_SPR 200.0f'] },
+            ]
+        },
+    },
+    {
+        id: 'LD',
+        title: 'Altitude Driver',
+        label: 'Which driver board are you using to drive the Altitude stepper motor:',
+        variable: 'altdrv',
+        condition: "($autopa == Y)",
+        preamble: ['// Using the {v} driver for ALT stepper motor'],
+        define: 'ALT_DRIVER_TYPE',
+        control: {
+            type: 'radioimg',
+            choices: [
+                { key: 'TU', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
+                { key: 'TS', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
+            ]
+        },
+    },
+    {
+        id: 'LA',
+        title: 'Altitude Advanced Settings',
+        label: 'These are some advanced settings you may want to override. The defaults are set already. Please only change them if you are sure what they do and what their valid ranges are. Enter the ALT stepper specs and desired settings:',
+        variable: 'altpower',
+        condition: "($altdrv == TU)",
+        preamble: ['// Define ALT stepper motor power settings'],
+        define: '',
+        control: {
+            type: 'textinput',
+            choices: [
+                { key: 'P', label: 'Power rating in mA', defaultValue: '{Defaults.PowerRating.alt}', defineLine: '#define ALT_MOTOR_CURRENT_RATING      {0} // mA' },
+                { key: 'O', label: 'Operating percentage', defaultValue: '{Defaults.PowerUtilization.alt}', defineLine: '#define ALT_OPERATING_CURRENT_SETTING {0} // %' },
+                { key: 'S', label: 'Microstepping setting', defaultValue: '{Defaults.AZALTMicrostepping.alt}', defineLine: '#define ALT_MICROSTEPPING             {0} // steps' },
+                { key: 'H', label: 'Hold current percentage (0 to power down)', defaultValue: '{Defaults.HoldPercentage.alt}', defineLine: '#define ALT_MOTOR_HOLD_SETTING        {0} // %' },
+            ]
+        },
+        postamble: [{
+            literal: [
+                '#define ALT_STEPPER_SPEED             1500',
+                '#define ALT_STEPPER_ACCELERATION       500',
+                '',
+                '// Is it going the wrong way?',
+                '#define ALT_INVERT_DIR 0'
+            ]
+        }]
+    },
+    {
+        id: 'LAO',
+        title: 'Altitude Always On',
+        label: 'It is possible to keep the altitude motor energized at all times to prevent any shifting in position. This is usually not needed.',
+        variable: 'altalwayson',
+        condition: "($autopa == Y)",
+        preamble: ['// Define ALT always-on'],
+        define: 'ALT_ALWAYS_ON',
+        control: {
+            type: 'radioimg',
+            choices: [
+                { key: 'Y', value: 'Yes', image: '/images/none.png', defineValue: '1' },
+                { key: 'N', value: 'No', image: '/images/none.png', defineValue: '0' },
+            ]
+        },
+    },
     createStepperStealthModeStep(),
     createDisplayStep(),
     createInfoDisplayStep(),

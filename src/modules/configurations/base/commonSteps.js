@@ -119,9 +119,9 @@ export const createRADriverStep = () => ({
     control: {
         type: 'radioimg',
         choices: [
-            { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
             { key: 'TU', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
             { key: 'TS', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
+            { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
         ]
     },
 });
@@ -154,7 +154,6 @@ export const createDECStepperStep = () => ({
     control: {
         type: 'radioimg',
         choices: [
-            { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define DEC_STEPPER_SPR 2048.0f'], condition: "($stepperlib != N)" },
             { 
                 key: 'N9', 
                 value: 'NEMA 17, 0.9°/step', 
@@ -200,6 +199,7 @@ export const createDECStepperStep = () => ({
                 condition: "($tracker == OAM)",
                 additionalLines: ['#define DEC_STEPPER_SPR                (200 * 9)']
             },
+            { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define DEC_STEPPER_SPR 2048.0f'], condition: "($stepperlib != N)" },
         ]
     },
     postamble: [{
@@ -219,9 +219,9 @@ export const createDECDriverStep = () => ({
     control: {
         type: 'radioimg',
         choices: [
-            { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
             { key: 'TU', value: 'TMC2209-UART', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_UART' },
             { key: 'TS', value: 'TMC2209-Standalone', image: '/images/tmc2209.png', defineValue: 'DRIVER_TYPE_TMC2209_STANDALONE' },
+            { key: 'A', value: 'Generic A4988', image: '/images/a4988.png', defineValue: 'DRIVER_TYPE_A4988_GENERIC' },
         ]
     },
 });
@@ -424,11 +424,11 @@ export const createFocuserSteps = () => [
         control: {
             type: 'radioimg',
             choices: [
-                { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define FOCUS_STEPPER_SPR 2048.0f'] },
                 { key: 'N9', value: 'NEMA 17, 0.9°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED' },
                 { key: 'N8', value: 'NEMA 17, 1.8°/step', image: '/images/nema17.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define FOCUS_STEPPER_SPR 200.0f'] },
                 { key: 'N49', value: 'NEMA 14, 0.9°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLED' },
                 { key: 'N48', value: 'NEMA 14, 1.8°/step', image: '/images/nema14.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define FOCUS_STEPPER_SPR 200.0f'] },
+                { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define FOCUS_STEPPER_SPR 2048.0f'] },
             ]
         },
     },
@@ -514,7 +514,7 @@ export const createHallSensorSteps = () => [
         control: {
             type: 'textinput',
             choices: [
-                { key: 'P', label: 'Pin that sensor is attached to', defaultValue: '{Defaults.RAHallSensorPin.tracker}', defineLine: '#define RA_HOMING_SENSOR_PIN            {0}' },
+                { key: 'P', label: 'Pin that sensor is attached to', defaultValue: '18', defineLine: '#define RA_HOMING_SENSOR_PIN            {0}' },
                 { key: 'S', label: 'Number of degrees to search for sensor', defaultValue: '10', defineLine: '#define RA_HOMING_SENSOR_SEARCH_DEGREES {0}' },
             ]
         },
