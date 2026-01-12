@@ -103,12 +103,12 @@ export const createBoardStep = () => ({
             { key: 'M10', value: 'MKS GEN L V1.0', image: '/images/mksv10.png', defineValue: 'BOARD_AVR_MKS_GEN_L_V1' },
             { key: 'M20', value: 'MKS GEN L V2.0', image: '/images/mksv20.png', defineValue: 'BOARD_AVR_MKS_GEN_L_V2' },
             { key: 'M21', value: 'MKS GEN L V2.1', image: '/images/mksv21.png', defineValue: 'BOARD_AVR_MKS_GEN_L_V21' },
-            { key: 'OAEV1', value: 'OAE_V1', image: '/images/oaeboard.png', defineValue: 'BOARD_OAE_V1' },
+            { key: 'OAEV1', value: 'OAE V1', image: '/images/oaeboard.png', defineValue: 'BOARD_OAE_V1' },
         ]
     },
 });
 
-// RA Driver step (OAT/OAM)
+// RA Driver step (OAT/OAM/OAE)
 export const createRADriverStep = () => ({
     id: 'RDO',
     title: 'RA Driver',
@@ -208,7 +208,7 @@ export const createDECStepperStep = () => ({
     }],
 });
 
-// DEC Driver step (OAT/OAM)
+// DEC Driver step (OAT/OAM/OAE)
 export const createDECDriverStep = () => ({
     id: 'DDT',
     title: 'DEC Driver',
@@ -297,12 +297,12 @@ export const createInfoDisplayStep = () => ({
         ]
     },
     postamble: [
-        { literal: ['#define INFO_DISPLAY_I2C_ADDRESS   0x3C'] },
-        { literal: ['#define INFO_DISPLAY_I2C_SDA_PIN   20'] },
-        { literal: ['#define INFO_DISPLAY_I2C_SCL_PIN   21'] },
+        { literal: ['#define INFO_DISPLAY_I2C_ADDRESS   0x3C'], condition: "($infodisplay == OLED)" },
+        { literal: ['#define INFO_DISPLAY_I2C_SDA_PIN   20'], condition: "($infodisplay == OLED)" },
+        { literal: ['#define INFO_DISPLAY_I2C_SCL_PIN   21'], condition: "($infodisplay == OLED)" },
         {
             literal: ['// Note that the E1 port is not usable since I2C requires pin 21!'],
-            condition: "($board == M10) OR ($board == M20) OR ($board == M21)",
+            condition: "($board IN [M10,M20,M21]) AND ($infodisplay == OLED)",
         },
     ],
 });
@@ -514,7 +514,7 @@ export const createHallSensorSteps = () => [
         control: {
             type: 'textinput',
             choices: [
-                { key: 'P', label: 'Pin that sensor is attached to', defaultValue: '18', defineLine: '#define RA_HOMING_SENSOR_PIN            {0}' },
+                { key: 'P', label: 'Pin that sensor is attached to', defaultValue: '{Defaults.RAHallSensorPin.tracker}', defineLine: '#define RA_HOMING_SENSOR_PIN            {0}' },
                 { key: 'S', label: 'Number of degrees to search for sensor', defaultValue: '10', defineLine: '#define RA_HOMING_SENSOR_SEARCH_DEGREES {0}' },
             ]
         },

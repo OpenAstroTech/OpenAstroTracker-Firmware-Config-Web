@@ -46,4 +46,10 @@ export const Defaults = {
     OAMSpeed: { N9: 2.0, N8: 2.0, N9O: 2.0, N8O: 2.0, rastpr: { N9: 2.0, N8: 2.0, N9O: 2.0, N8O: 2.0 }, decstpr: { N9: 2.0, N8: 2.0, N9O: 2.0, N8O: 2.0 } },
     OAMAcceleration: { N9: 2.0, N8: 2.0, N9O: 2.0, N8O: 2.0, rastpr: { N9: 2.0, N8: 2.0, N9O: 2.0, N8O: 2.0 }, decstpr: { N9: 2.0, N8: 2.0, N9O: 2.0, N8O: 2.0 } },
     OAMMicrostepping: { N9: 128, N8: 128, N9O: 128, N8O: 128, rastpr: { N9: 128, N8: 128, N9O: 128, N8O: 128 }, decstpr: { N9: 128, N8: 128, N9O: 128, N8O: 128 } },
+    RAHallSensorPin: { OAT: 53, OAM: 27, OAE: 27 },
+    DECHallSensorPin: { OAT: 52, OAM: 29, OAE: 29 },
+    OAEPowerRating: { N9: 2000, N8: 2000, N9O: 2000, N8O: 2000 },
+    OAEPowerUtilization: { N9: 50, N8: 50, N9O: 50, N8O: 50 },
+    OAESlewMicrostepping: { N9: 4, N8: 4, N9O: 16, N8O: 16 },
+    OAETrackMicrostepping: { N9: 256, N8: 256, N9O: 256, N8O: 256 }    
 };

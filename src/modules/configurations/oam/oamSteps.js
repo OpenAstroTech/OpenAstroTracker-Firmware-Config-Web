@@ -342,7 +342,7 @@ export const getOAMSteps = () => [
         control: {
             type: 'textinput',
             choices: [
-                { key: 'P', label: 'Pin that sensor is attached to', defaultValue: '29', defineLine: '#define DEC_HOMING_SENSOR_PIN            {0}' },
+                { key: 'P', label: 'Pin that sensor is attached to', defaultValue: '{Defaults.DECHallSensorPin.tracker}', defineLine: '#define DEC_HOMING_SENSOR_PIN            {0}' },
                 { key: 'S', label: 'Number of degrees to search for sensor', defaultValue: '10', defineLine: '#define DEC_HOMING_SENSOR_SEARCH_DEGREES {0}' },
             ]
         },
