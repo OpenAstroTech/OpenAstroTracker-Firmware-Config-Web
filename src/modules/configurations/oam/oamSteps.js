@@ -123,14 +123,8 @@ export const getOAMSteps = () => [
                 { key: 'S', label: 'Microstepping setting', defaultValue: '{Defaults.OAMMicrostepping.decstpr}', defineLine: '#define DEC_SLEW_MICROSTEPPING         {0}\n#define DEC_GUIDE_MICROSTEPPING        {0}' },
             ]
         },
-        postamble: [{
-            literal: [
-                '',
-                '// Is it going the wrong way?',
-                '#define DEC_INVERT_DIR  0'
-            ]
-        }]
     },
+
     createDECPulleyTeethStep(),
     {
         id: 'DLO',
@@ -145,7 +139,21 @@ export const getOAMSteps = () => [
                 { key: 'N', label: 'Degrees DEC can move from Home', defaultValue: '120', defineLine: '#define DEC_LIMIT_UP   {0} // degrees from Home\n#define DEC_LIMIT_DOWN {0}' },
             ]
         },
+	postamble: [{
+            literal: [
+                '',
+                '// Is it going the wrong way?',
+                '#define DEC_INVERT_DIR  0',
+		'',
+		'// DEC Wheel Circumference',
+		['#define DEC_WHEEL_CIRCUMFERENCE        816.814f'],
+            ]
+        }]
+
     },
+
+
+
     {
         id: 'ZST',
         title: 'Azimuth Stepper',
