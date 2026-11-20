@@ -1,5 +1,5 @@
 // OAE Configuration Steps
-import { createTrackerSelectionStep, createHemisphereStep, createTrackingOnBootStep } from '../base/commonSteps.js';
+import { createTrackerSelectionStep, createHemisphereStep, createTrackingOnBootStep, createParkedMotorsOffStep } from '../base/commonSteps.js';
 
 export const getOAESteps = () => [
     createTrackerSelectionStep(),
@@ -154,4 +154,5 @@ export const getOAESteps = () => [
         },
     },
     createTrackingOnBootStep(),
+    createParkedMotorsOffStep(),
 ];

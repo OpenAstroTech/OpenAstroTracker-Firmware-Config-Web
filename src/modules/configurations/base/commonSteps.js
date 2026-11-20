@@ -79,6 +79,23 @@ export const createTrackingOnBootStep = () => ({
     },
 });
 
+// Motors off when parked step (OAM/OAE only: their gearboxes hold the axes without power, an OAT would lose its position)
+export const createParkedMotorsOffStep = () => ({
+    id: 'POF',
+    title: 'Motors when parked',
+    label: 'Do you want the RA and DEC motors switched off while the mount is parked:',
+    variable: 'parkoff',
+    preamble: ['// Switch the RA and DEC drivers off while parked (needs firmware with RA_DEC_OFF_WHEN_PARKED)'],
+    define: 'RA_DEC_OFF_WHEN_PARKED',
+    control: {
+        type: 'radioimg',
+        choices: [
+            { key: 'N', value: 'No, keep them powered', image: '/images/none.png', defineValue: '0' },
+            { key: 'Y', value: 'Yes, switch them off until the mount moves again', image: '/images/none.png', defineValue: '1' },
+        ]
+    },
+});
+
 // Board selection step (OAT/OAM)
 export const createBoardStep = () => ({
     id: 'BD',

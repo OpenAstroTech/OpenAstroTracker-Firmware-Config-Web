@@ -3,6 +3,7 @@ import {
     createTrackerSelectionStep, 
     createHemisphereStep, 
     createTrackingOnBootStep,
+    createParkedMotorsOffStep,
     createBoardStep,
     createRADriverStep,
     createRAPulleyTeethStep,
@@ -102,6 +103,7 @@ export const getOAMSteps = () => [
         }]
     },
     createTrackingOnBootStep(),
+    createParkedMotorsOffStep(),
     createRAPulleyTeethStep(),
     {
         // The OAT takes DEC_WHEEL_CIRCUMFERENCE from Configuration_adv.hpp; only the OAM sets it here.
