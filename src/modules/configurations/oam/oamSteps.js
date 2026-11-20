@@ -103,7 +103,13 @@ export const getOAMSteps = () => [
     },
     createTrackingOnBootStep(),
     createRAPulleyTeethStep(),
-    createDECStepperStep(),
+    {
+        // The OAT takes DEC_WHEEL_CIRCUMFERENCE from Configuration_adv.hpp; only the OAM sets it here.
+        ...createDECStepperStep(),
+        postamble: [{
+            literal: ['#define DEC_WHEEL_CIRCUMFERENCE        816.814f'],
+        }],
+    },
     createDECDriverStep(),
     {
         id: 'DAM',

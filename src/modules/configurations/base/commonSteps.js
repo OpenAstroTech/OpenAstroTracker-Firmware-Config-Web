@@ -202,10 +202,6 @@ export const createDECStepperStep = () => ({
             { key: 'BY', value: 'Modded 28BYJ-48 (Bipolar)', image: '/images/byj48.png', defineValue: 'STEPPER_TYPE_ENABLED', additionalLines: ['#define DEC_STEPPER_SPR 2048.0f'], condition: "($stepperlib != N)" },
         ]
     },
-    postamble: [{
-        literal: ['#define DEC_WHEEL_CIRCUMFERENCE        816.814f'],
-
-    }],
 });
 
 // DEC Driver step (OAT/OAM/OAE)
